@@ -217,8 +217,13 @@ export default function AdminPage() {
   };
 
   const handleSaveEntry = () => {
-    if (!newEntry.teamName || newEntry.projectMembers.some(m => !m.name || !m.school)) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "All members must have a name and school." });
+    if (!newEntry.teamName || newEntry.projectMembers.length < 3) {
+      toast({ variant: "destructive", title: "Missing Members", description: "A team must have at least 3 members." });
+      return;
+    }
+
+    if (newEntry.projectMembers.some(m => !m.name || !m.school)) {
+      toast({ variant: "destructive", title: "Incomplete Fields", description: "All members must have a name and school." });
       return;
     }
     
@@ -260,6 +265,8 @@ export default function AdminPage() {
         ...newEntry,
         projectMembers: [...newEntry.projectMembers, { name: "", school: "", schoolLogoUrl: "" }]
       });
+    } else {
+      toast({ variant: "destructive", title: "Limit Reached", description: "Maximum 5 members per team." });
     }
   };
 
@@ -267,6 +274,8 @@ export default function AdminPage() {
     if (newEntry.projectMembers.length > 3) {
       const updatedMembers = newEntry.projectMembers.filter((_, i) => i !== index);
       setNewEntry({ ...newEntry, projectMembers: updatedMembers });
+    } else {
+      toast({ variant: "destructive", title: "Limit Reached", description: "Minimum 3 members required." });
     }
   };
 

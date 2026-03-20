@@ -33,9 +33,19 @@ export function EntryCard({ entry }: EntryCardProps) {
   const imageUrl = getGoogleDriveImageUrl(entry.thumbnailImageUrl) || "https://picsum.photos/seed/default/800/600";
   const logo = getPlaceholderImage("hero-logo");
 
-  // Representative school from the first member
-  const leadSchool = entry.projectMembers?.[0]?.school || "Multiple Schools";
-  const leadSchoolLogo = entry.projectMembers?.[0]?.schoolLogoUrl ? getGoogleDriveImageUrl(entry.projectMembers[0].schoolLogoUrl) : null;
+  // Filter for unique school logos to avoid doubling
+  const uniqueSchoolLogos = entry.projectMembers?.reduce((acc: string[], member) => {
+    if (member.schoolLogoUrl) {
+      const directUrl = getGoogleDriveImageUrl(member.schoolLogoUrl);
+      if (!acc.includes(directUrl)) {
+        acc.push(directUrl);
+      }
+    }
+    return acc;
+  }, []) || [];
+
+  // Get primary school for text display
+  const primarySchool = entry.projectMembers?.[0]?.school || "Multiple Schools";
 
   return (
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full rounded-xl">
@@ -102,7 +112,7 @@ export function EntryCard({ entry }: EntryCardProps) {
         <div className="flex flex-col gap-1.5 mb-4 text-xs text-muted-foreground uppercase tracking-widest">
           <div className="flex items-center gap-2">
             <School className="w-3.5 h-3.5 text-accent" />
-            <span className="truncate">{leadSchool}</span>
+            <span className="truncate">{primarySchool}</span>
           </div>
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-accent" />
@@ -115,16 +125,20 @@ export function EntryCard({ entry }: EntryCardProps) {
         </p>
 
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
-          <div className="relative w-8 h-8">
-            {leadSchoolLogo ? (
-              <Image 
-                src={leadSchoolLogo} 
-                alt={`${leadSchool} Logo`} 
-                fill 
-                className="object-contain" 
-              />
+          <div className="flex items-center -space-x-2">
+            {uniqueSchoolLogos.length > 0 ? (
+              uniqueSchoolLogos.map((logoUrl, idx) => (
+                <div key={idx} className="relative w-8 h-8 rounded-full bg-black border border-white/10 overflow-hidden">
+                  <Image 
+                    src={logoUrl} 
+                    alt="School Logo" 
+                    fill 
+                    className="object-contain p-1" 
+                  />
+                </div>
+              ))
             ) : (
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-white">
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-white border border-white/10">
                 <School className="w-4 h-4" />
               </div>
             )}
