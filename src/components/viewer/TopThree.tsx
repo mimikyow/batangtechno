@@ -1,15 +1,16 @@
 
-import { HackathonEntry } from "@/lib/types";
+"use client";
+
 import { Trophy, Star, Medal } from "lucide-react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 
 interface TopThreeProps {
-  entries: HackathonEntry[];
+  entries: any[];
 }
 
 export function TopThree({ entries }: TopThreeProps) {
-  const sorted = [...entries].filter(e => e.rank && e.rank <= 3).sort((a, b) => (a.rank || 0) - (b.rank || 0));
+  const sorted = [...entries].filter(e => e.finalRank && e.finalRank <= 3).sort((a, b) => (a.finalRank || 0) - (b.finalRank || 0));
 
   if (sorted.length === 0) return null;
 
@@ -34,10 +35,10 @@ export function TopThree({ entries }: TopThreeProps) {
                   <Medal className="w-6 h-6 text-white" />
                 </div>
                 <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
-                  <Image fill src={sorted[1].thumbnailUrl} alt={sorted[1].teamName} className="object-cover" />
+                  <Image fill src={sorted[1].thumbnailImageUrl || "https://picsum.photos/seed/silver/800/600"} alt={sorted[1].teamName} className="object-cover" />
                 </div>
                 <h3 className="text-xl font-bold text-white text-center mb-1">{sorted[1].teamName}</h3>
-                <p className="text-xs text-muted-foreground text-center uppercase tracking-tighter mb-2">{sorted[1].school}</p>
+                <p className="text-xs text-muted-foreground text-center uppercase tracking-tighter mb-2">{sorted[1].projectSchool}</p>
                 <div className="flex justify-center">
                    <Badge variant="outline" className="text-[10px] border-slate-400 text-slate-400">SILVER RADIANCE</Badge>
                 </div>
@@ -54,10 +55,10 @@ export function TopThree({ entries }: TopThreeProps) {
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
                 <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
-                  <Image fill src={sorted[0].thumbnailUrl} alt={sorted[0].teamName} className="object-cover" />
+                  <Image fill src={sorted[0].thumbnailImageUrl || "https://picsum.photos/seed/gold/800/600"} alt={sorted[0].teamName} className="object-cover" />
                 </div>
                 <h3 className="text-2xl font-black text-white text-center mb-1 italic tracking-tight">{sorted[0].teamName}</h3>
-                <p className="text-sm text-muted-foreground text-center uppercase tracking-widest mb-4">{sorted[0].school}</p>
+                <p className="text-sm text-muted-foreground text-center uppercase tracking-widest mb-4">{sorted[0].projectSchool}</p>
                 <div className="flex justify-center">
                    <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">GALACTIC CHAMPION</Badge>
                 </div>
@@ -74,10 +75,10 @@ export function TopThree({ entries }: TopThreeProps) {
                   <Star className="w-6 h-6 text-white" />
                 </div>
                 <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
-                  <Image fill src={sorted[2].thumbnailUrl} alt={sorted[2].teamName} className="object-cover" />
+                  <Image fill src={sorted[2].thumbnailImageUrl || "https://picsum.photos/seed/bronze/800/600"} alt={sorted[2].teamName} className="object-cover" />
                 </div>
                 <h3 className="text-xl font-bold text-white text-center mb-1">{sorted[2].teamName}</h3>
-                <p className="text-xs text-muted-foreground text-center uppercase tracking-tighter mb-2">{sorted[2].school}</p>
+                <p className="text-xs text-muted-foreground text-center uppercase tracking-tighter mb-2">{sorted[2].projectSchool}</p>
                  <div className="flex justify-center">
                    <Badge variant="outline" className="text-[10px] border-amber-700 text-amber-700">BRONZE SPARK</Badge>
                 </div>

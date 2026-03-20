@@ -1,19 +1,21 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CHALLENGES, MOCK_ENTRIES } from "@/lib/constants";
+import { CHALLENGES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit2, UploadCloud, Save, Users, Video, Image as ImageIcon, ShieldAlert, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit2, UploadCloud, Save, Users, Video, Image as ImageIcon, ShieldAlert, Loader2, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
+import { doc, setDoc, collection, serverTimestamp, deleteDoc, updateDoc } from "firebase/firestore";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function AdminPage() {
   const { user, isUserLoading } = useUser();
@@ -24,17 +26,18 @@ export default function AdminPage() {
   const adminDocRef = useMemoFirebase(() => user ? doc(db, "roles_admin", user.uid) : null, [db, user]);
   const { data: adminRole, isLoading: isAdminChecking } = useDoc(adminDocRef);
 
-  const [entries, setEntries] = useState(MOCK_ENTRIES);
+  const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
+  const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
+
   const [isAdding, setIsAdding] = useState(false);
-  
   const [newEntry, setNewEntry] = useState({
     teamName: "",
-    school: "",
-    description: "",
-    challenge: CHALLENGES[0],
-    videoLink: "",
-    thumbnailUrl: "",
-    members: ["Member 1", "Member 2", "Member 3"]
+    projectSchool: "",
+    projectDescription: "",
+    challengeId: CHALLENGES[0],
+    googleDriveVideoLink: "",
+    thumbnailImageUrl: "",
+    projectMembers: ["Member 1", "Member 2", "Member 3"]
   });
 
   useEffect(() => {
@@ -42,6 +45,22 @@ export default function AdminPage() {
       router.push("/login");
     }
   }, [user, isUserLoading, router]);
+
+  const handleGrantAdmin = async () => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, "roles_admin", user.uid), {
+        id: user.uid,
+        externalAuthId: user.uid,
+        email: user.email,
+        name: user.displayName || "Admin User",
+        role: "admin"
+      });
+      toast({ title: "Access Granted", description: "You are now a Command Center Administrator." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    }
+  };
 
   if (isUserLoading || isAdminChecking) {
     return (
@@ -59,37 +78,55 @@ export default function AdminPage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md">Your credentials do not grant administrative privileges. Please contact the high command for clearance.</p>
-        <Button onClick={() => router.push("/")} className="mt-8 border-white/20" variant="outline">
-          Return to Hub
-        </Button>
+        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant administrative privileges. Please contact the high command for clearance.</p>
+        
+        <div className="flex flex-col gap-4">
+          <Button onClick={handleGrantAdmin} className="bg-accent hover:bg-accent/80 text-white font-bold">
+            <Sparkles className="w-4 h-4 mr-2" /> Setup Developer Access
+          </Button>
+          <Button onClick={() => router.push("/")} variant="outline" className="border-white/20">
+            Return to Hub
+          </Button>
+        </div>
       </div>
     );
   }
 
   const handleAddMember = () => {
-    setNewEntry(prev => ({ ...prev, members: [...prev.members, `Member ${prev.members.length + 1}`] }));
+    setNewEntry(prev => ({ ...prev, projectMembers: [...prev.projectMembers, `Member ${prev.projectMembers.length + 1}`] }));
   };
 
   const handleMemberChange = (index: number, value: string) => {
-    const updated = [...newEntry.members];
+    const updated = [...newEntry.projectMembers];
     updated[index] = value;
-    setNewEntry(prev => ({ ...prev, members: updated }));
+    setNewEntry(prev => ({ ...prev, projectMembers: updated }));
   };
 
   const handleSaveEntry = () => {
-    if (!newEntry.teamName || !newEntry.school) {
+    if (!newEntry.teamName || !newEntry.projectSchool) {
       toast({ variant: "destructive", title: "Missing Fields", description: "Team name and school are required." });
       return;
     }
-    const entry = {
+    
+    addDocumentNonBlocking(collection(db, "entries"), {
       ...newEntry,
-      id: Math.random().toString(36).substr(2, 9),
-      members: newEntry.members.map(m => ({ id: Math.random().toString(), name: m }))
-    };
-    setEntries([entry as any, ...entries]);
+      submissionDate: new Date().toISOString(),
+      adminApproved: true,
+      assignedJudges: {}
+    });
+
     setIsAdding(false);
     toast({ title: "Entry Uploaded", description: `${newEntry.teamName} has been added to the mission.` });
+  };
+
+  const handleDeleteEntry = (id: string) => {
+    deleteDocumentNonBlocking(doc(db, "entries", id));
+    toast({ title: "Entry Removed", description: "The entry has been decommissioned." });
+  };
+
+  const handleUpdateRank = (id: string, rank: string) => {
+    const rankNum = rank === "NONE" ? null : parseInt(rank);
+    updateDocumentNonBlocking(doc(db, "entries", id), { finalRank: rankNum });
   };
 
   return (
@@ -97,7 +134,7 @@ export default function AdminPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
           <h1 className="text-4xl font-bold text-white mb-2">Command Center</h1>
-          <p className="text-muted-foreground">Managing {entries.length} active stellar missions</p>
+          <p className="text-muted-foreground">Managing {entries?.length || 0} active stellar missions</p>
         </div>
         
         <div className="flex gap-4">
@@ -125,15 +162,15 @@ export default function AdminPage() {
                     <label className="text-xs font-semibold text-accent">School / Institution</label>
                     <Input 
                       placeholder="e.g. Galaxy Tech" 
-                      value={newEntry.school} 
-                      onChange={e => setNewEntry({...newEntry, school: e.target.value})}
+                      value={newEntry.projectSchool} 
+                      onChange={e => setNewEntry({...newEntry, projectSchool: e.target.value})}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-accent">Challenge chosen</label>
-                  <Select value={newEntry.challenge} onValueChange={(val: any) => setNewEntry({...newEntry, challenge: val})}>
+                  <Select value={newEntry.challengeId} onValueChange={(val: any) => setNewEntry({...newEntry, challengeId: val})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {CHALLENGES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -144,7 +181,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-accent">Members (Min 3)</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {newEntry.members.map((m, i) => (
+                    {newEntry.projectMembers.map((m, i) => (
                       <Input key={i} value={m} onChange={e => handleMemberChange(i, e.target.value)} placeholder={`Member ${i+1}`} />
                     ))}
                   </div>
@@ -155,26 +192,20 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-accent">Google Drive Video (Embed Link)</label>
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="https://youtube.com/embed/..." 
-                        value={newEntry.videoLink} 
-                        onChange={e => setNewEntry({...newEntry, videoLink: e.target.value})}
-                      />
-                      <Button variant="secondary" size="icon"><Video className="w-4 h-4" /></Button>
-                    </div>
+                    <label className="text-xs font-semibold text-accent">Video (Embed Link)</label>
+                    <Input 
+                      placeholder="https://youtube.com/embed/..." 
+                      value={newEntry.googleDriveVideoLink} 
+                      onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-accent">Thumbnail Image URL</label>
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="https://..." 
-                        value={newEntry.thumbnailUrl} 
-                        onChange={e => setNewEntry({...newEntry, thumbnailUrl: e.target.value})}
-                      />
-                      <Button variant="secondary" size="icon"><ImageIcon className="w-4 h-4" /></Button>
-                    </div>
+                    <label className="text-xs font-semibold text-accent">Thumbnail URL</label>
+                    <Input 
+                      placeholder="https://..." 
+                      value={newEntry.thumbnailImageUrl} 
+                      onChange={e => setNewEntry({...newEntry, thumbnailImageUrl: e.target.value})}
+                    />
                   </div>
                 </div>
 
@@ -183,8 +214,8 @@ export default function AdminPage() {
                   <Textarea 
                     placeholder="Briefly describe the mission objective..." 
                     className="h-32"
-                    value={newEntry.description}
-                    onChange={e => setNewEntry({...newEntry, description: e.target.value})}
+                    value={newEntry.projectDescription}
+                    onChange={e => setNewEntry({...newEntry, projectDescription: e.target.value})}
                   />
                 </div>
               </div>
@@ -202,61 +233,69 @@ export default function AdminPage() {
       </div>
 
       <div className="glass-card rounded-xl overflow-hidden">
-        <Table>
-          <TableHeader className="bg-white/5">
-            <TableRow className="border-white/10">
-              <TableHead className="text-accent uppercase text-xs">Team & School</TableHead>
-              <TableHead className="text-accent uppercase text-xs">Challenge</TableHead>
-              <TableHead className="text-accent uppercase text-xs text-center">Current Rank</TableHead>
-              <TableHead className="text-accent uppercase text-xs text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                <TableCell className="py-4">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-white text-lg">{entry.teamName}</span>
-                    <span className="text-xs text-muted-foreground uppercase">{entry.school}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                   <Badge variant="outline" className="text-[10px] whitespace-nowrap overflow-hidden max-w-[200px] inline-block text-ellipsis">
-                    {entry.challenge}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex justify-center">
-                    <Select defaultValue={entry.rank?.toString() || "NONE"}>
-                      <SelectTrigger className="w-24 bg-transparent border-white/20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NONE">Unranked</SelectItem>
-                        <SelectItem value="1">1st Place</SelectItem>
-                        <SelectItem value="2">2nd Place</SelectItem>
-                        <SelectItem value="3">3rd Place</SelectItem>
-                        <SelectItem value="4">Top 10</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-center gap-2">
-                    <Button variant="ghost" size="icon" className="hover:text-accent"><Edit2 className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </TableCell>
+        {isEntriesLoading ? (
+          <div className="p-12 text-center">
+            <Loader2 className="w-8 h-8 text-accent animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Retrieving mission logs...</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader className="bg-white/5">
+              <TableRow className="border-white/10">
+                <TableHead className="text-accent uppercase text-xs">Team & School</TableHead>
+                <TableHead className="text-accent uppercase text-xs">Challenge</TableHead>
+                <TableHead className="text-accent uppercase text-xs text-center">Current Rank</TableHead>
+                <TableHead className="text-accent uppercase text-xs text-center">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="mt-12 flex justify-end">
-        <Button className="bg-accent shadow-[0_0_20px_rgba(51,153,255,0.4)] px-8 py-6 text-lg font-bold">
-          <Save className="w-5 h-5 mr-2" /> Finalize Ranks & Deploy
-        </Button>
+            </TableHeader>
+            <TableBody>
+              {entries?.map((entry) => (
+                <TableRow key={entry.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                  <TableCell className="py-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-white text-lg">{entry.teamName}</span>
+                      <span className="text-xs text-muted-foreground uppercase">{entry.projectSchool}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-[10px] max-w-[150px] truncate">
+                      {entry.challengeId}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex justify-center">
+                      <Select defaultValue={entry.finalRank?.toString() || "NONE"} onValueChange={(val) => handleUpdateRank(entry.id, val)}>
+                        <SelectTrigger className="w-24 bg-transparent border-white/20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">Unranked</SelectItem>
+                          <SelectItem value="1">1st Place</SelectItem>
+                          <SelectItem value="2">2nd Place</SelectItem>
+                          <SelectItem value="3">3rd Place</SelectItem>
+                          <SelectItem value="4">Top 10</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button variant="ghost" size="icon" className="hover:text-accent"><Edit2 className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => handleDeleteEntry(entry.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {(!entries || entries.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-40 text-center text-muted-foreground italic">
+                    No active missions registered in the constellation.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

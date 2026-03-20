@@ -1,23 +1,28 @@
 
 "use client";
 
-import { MOCK_ENTRIES } from "@/lib/constants";
 import { TopThree } from "@/components/viewer/TopThree";
 import { EntryCard } from "@/components/viewer/EntryCard";
 import { CHALLENGES } from "@/lib/constants";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Loader2 } from "lucide-react";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
 
 export default function Home() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
+  const db = useFirestore();
 
-  const filteredEntries = MOCK_ENTRIES.filter(entry => {
+  const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
+  const { data: entries, isLoading } = useCollection(entriesQuery);
+
+  const filteredEntries = (entries || []).filter(entry => {
     const matchesSearch = entry.teamName.toLowerCase().includes(search.toLowerCase()) || 
-                          entry.school.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "ALL" || entry.challenge === filter;
+                          entry.projectSchool.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === "ALL" || entry.challengeId === filter;
     return matchesSearch && matchesFilter;
   });
 
@@ -43,14 +48,14 @@ export default function Home() {
       </section>
 
       {/* Winners Podium */}
-      <TopThree entries={MOCK_ENTRIES} />
+      {entries && <TopThree entries={entries} />}
 
       {/* All Entries Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
             <h2 className="text-3xl font-bold text-white mb-2">Discovery Hub</h2>
-            <p className="text-muted-foreground">Explore all {MOCK_ENTRIES.length} entries in the constellation</p>
+            <p className="text-muted-foreground">Explore all {filteredEntries.length} entries in the constellation</p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4">
@@ -83,13 +88,20 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredEntries.map(entry => (
-            <EntryCard key={entry.id} entry={entry} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-10 h-10 text-accent animate-spin" />
+            <p className="text-muted-foreground uppercase text-xs tracking-widest">Scanning Deep Space...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredEntries.map(entry => (
+              <EntryCard key={entry.id} entry={entry as any} />
+            ))}
+          </div>
+        )}
         
-        {filteredEntries.length === 0 && (
+        {!isLoading && filteredEntries.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-muted-foreground italic">No entries found in this quadrant...</p>
           </div>

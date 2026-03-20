@@ -1,16 +1,17 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { MOCK_ENTRIES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2 } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
+import { doc, collection, setDoc } from "firebase/firestore";
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function JudgePage() {
   const { user, isUserLoading } = useUser();
@@ -23,6 +24,9 @@ export default function JudgePage() {
   
   const { data: judgeRole, isLoading: isJudgeChecking } = useDoc(judgeDocRef);
   const { data: adminRole, isLoading: isAdminChecking } = useDoc(adminDocRef);
+
+  const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
+  const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [scores, setScores] = useState({
@@ -39,6 +43,22 @@ export default function JudgePage() {
     }
   }, [user, isUserLoading, router]);
 
+  const handleGrantJudge = async () => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, "roles_judge", user.uid), {
+        id: user.uid,
+        externalAuthId: user.uid,
+        email: user.email,
+        name: user.displayName || "Judge User",
+        role: "judge"
+      });
+      toast({ title: "Access Granted", description: "You are now a certified mission Judge." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    }
+  };
+
   if (isUserLoading || isJudgeChecking || isAdminChecking) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
@@ -48,7 +68,6 @@ export default function JudgePage() {
     );
   }
 
-  // Judges OR Admins can see this page
   if (!judgeRole && !adminRole) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
@@ -56,15 +75,31 @@ export default function JudgePage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md">Your credentials do not grant access to the Judge Panel. Please consult the mission coordinator.</p>
-        <Button onClick={() => router.push("/")} className="mt-8 border-white/20" variant="outline">
-          Return to Hub
-        </Button>
+        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant access to the Judge Panel. Please consult the mission coordinator.</p>
+        
+        <div className="flex flex-col gap-4">
+          <Button onClick={handleGrantJudge} className="bg-accent hover:bg-accent/80 text-white font-bold">
+            <Sparkles className="w-4 h-4 mr-2" /> Setup Developer Access
+          </Button>
+          <Button onClick={() => router.push("/")} variant="outline" className="border-white/20">
+            Return to Hub
+          </Button>
+        </div>
       </div>
     );
   }
 
   const handleSubmitScore = () => {
+    if (!user || !selectedEntry) return;
+
+    addDocumentNonBlocking(collection(db, "entries", selectedEntry.id, "scoreSubmissions"), {
+      judgeId: user.uid,
+      entryId: selectedEntry.id,
+      scores,
+      submissionDate: new Date().toISOString(),
+      adminUploaded: false
+    });
+
     toast({
       title: "Score Recorded",
       description: `Evaluation for ${selectedEntry.teamName} has been transmitted to the Command Center.`
@@ -79,10 +114,12 @@ export default function JudgePage() {
         {/* Sidebar: Entries List */}
         <div className="w-full md:w-80 flex flex-col gap-4">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{MOCK_ENTRIES.length}</Badge>
+            Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{entries?.length || 0}</Badge>
           </h2>
           <div className="flex flex-col gap-2 max-h-[70vh] overflow-y-auto pr-2">
-            {MOCK_ENTRIES.map(entry => (
+            {isEntriesLoading ? (
+              <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+            ) : entries?.map(entry => (
               <button
                 key={entry.id}
                 onClick={() => setSelectedEntry(entry)}
@@ -93,7 +130,7 @@ export default function JudgePage() {
                 }`}
               >
                 <div className="font-bold text-white text-sm">{entry.teamName}</div>
-                <div className="text-[10px] text-muted-foreground uppercase">{entry.school}</div>
+                <div className="text-[10px] text-muted-foreground uppercase">{entry.projectSchool}</div>
               </button>
             ))}
           </div>
@@ -107,14 +144,14 @@ export default function JudgePage() {
                 <div className="flex-1 space-y-6">
                   <div>
                     <h1 className="text-4xl font-black text-white glow-accent italic">{selectedEntry.teamName}</h1>
-                    <p className="text-accent font-semibold">{selectedEntry.challenge}</p>
+                    <p className="text-accent font-semibold">{selectedEntry.challengeId}</p>
                   </div>
                   
                   <div className="aspect-video relative rounded-2xl overflow-hidden border border-white/10 bg-black">
                      <iframe
                         width="100%"
                         height="100%"
-                        src={selectedEntry.videoLink}
+                        src={selectedEntry.googleDriveVideoLink}
                         title="Pitch Video"
                         allowFullScreen
                       ></iframe>
@@ -124,7 +161,7 @@ export default function JudgePage() {
                     <h3 className="text-white font-bold mb-2 flex items-center gap-2">
                       <Info className="w-4 h-4 text-accent" /> Project Brief
                     </h3>
-                    <p className="text-slate-300 text-sm leading-relaxed">{selectedEntry.description}</p>
+                    <p className="text-slate-300 text-sm leading-relaxed">{selectedEntry.projectDescription}</p>
                   </div>
                 </div>
 

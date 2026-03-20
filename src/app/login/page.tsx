@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,21 +15,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Welcome back", description: "Authentication successful." });
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        toast({ title: "Account Created", description: "Your stellar identity has been registered." });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        toast({ title: "Welcome back", description: "Authentication successful." });
+      }
       router.push("/");
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
-        title: "Login Failed", 
+        title: "Auth Failed", 
         description: error.message || "Please check your credentials." 
       });
     } finally {
@@ -48,14 +55,14 @@ export default function LoginPage() {
           <div className="mx-auto w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
             <Rocket className="w-8 h-8 text-accent animate-pulse" />
           </div>
-          <CardTitle className="text-3xl font-black italic glow-accent text-white">
-            SECURE ACCESS
+          <CardTitle className="text-3xl font-black italic glow-accent text-white uppercase">
+            {isSignUp ? "Register Identity" : "Secure Access"}
           </CardTitle>
           <CardDescription className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
-            Enter the Batang Techno Nebula
+            {isSignUp ? "Create your credentials for the nebula" : "Enter the Batang Techno Nebula"}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleAuth}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-accent mb-1 uppercase tracking-tighter">
@@ -93,15 +100,20 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Verifying...
+                  Processing...
                 </>
               ) : (
-                "Initiate Connection"
+                isSignUp ? "Create Account" : "Initiate Connection"
               )}
             </Button>
-            <p className="text-[10px] text-center text-muted-foreground uppercase italic">
-              Restricted to Judges and Command Center Personnel
-            </p>
+            <Button 
+              type="button" 
+              variant="link" 
+              className="text-[10px] text-muted-foreground uppercase italic"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp ? "Already have an account? Login" : "Need an account? Sign Up"}
+            </Button>
           </CardFooter>
         </form>
       </Card>

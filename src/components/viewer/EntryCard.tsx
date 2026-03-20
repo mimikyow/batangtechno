@@ -1,7 +1,6 @@
 
 "use client";
 
-import { HackathonEntry } from "@/lib/types";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,17 @@ import { PlayCircle, Users, School, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface EntryCardProps {
-  entry: HackathonEntry;
+  entry: {
+    id: string;
+    teamName: string;
+    projectSchool: string;
+    projectDescription: string;
+    googleDriveVideoLink: string;
+    thumbnailImageUrl: string;
+    challengeId: string;
+    projectMembers: string[];
+    finalRank?: number;
+  };
 }
 
 export function EntryCard({ entry }: EntryCardProps) {
@@ -17,7 +26,7 @@ export function EntryCard({ entry }: EntryCardProps) {
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full">
       <div className="relative aspect-video overflow-hidden">
         <Image 
-          src={entry.thumbnailUrl} 
+          src={entry.thumbnailImageUrl || "https://picsum.photos/seed/default/800/600"} 
           alt={entry.teamName} 
           fill 
           className="object-cover transition-transform group-hover:scale-105" 
@@ -34,7 +43,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                 <iframe
                   width="100%"
                   height="100%"
-                  src={entry.videoLink}
+                  src={entry.googleDriveVideoLink}
                   title={`${entry.teamName} Pitch`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -44,9 +53,9 @@ export function EntryCard({ entry }: EntryCardProps) {
           </Dialog>
         </div>
         <div className="absolute top-2 right-2">
-          {entry.rank && (
+          {entry.finalRank && (
             <Badge className="bg-accent text-white border-none shadow-glow">
-              Rank #{entry.rank}
+              Rank #{entry.finalRank}
             </Badge>
           )}
         </div>
@@ -62,32 +71,32 @@ export function EntryCard({ entry }: EntryCardProps) {
         <div className="flex flex-col gap-1.5 mb-4 text-xs text-muted-foreground uppercase tracking-widest">
           <div className="flex items-center gap-2">
             <School className="w-3.5 h-3.5 text-accent" />
-            {entry.school}
+            {entry.projectSchool}
           </div>
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-accent" />
-            {entry.challenge.split(' ').slice(0, 3).join(' ')}...
+            <span className="truncate">{entry.challengeId}</span>
           </div>
         </div>
 
         <p className="text-sm text-slate-300 line-clamp-3 mb-6 flex-1">
-          {entry.description}
+          {entry.projectDescription}
         </p>
 
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
           <div className="flex -space-x-2">
-            {entry.members.map((member, i) => (
+            {entry.projectMembers?.slice(0, 3).map((member, i) => (
               <div 
-                key={member.id} 
-                title={member.name}
+                key={i} 
+                title={member}
                 className="w-8 h-8 rounded-full border-2 border-card bg-secondary flex items-center justify-center text-[10px] font-bold text-white"
               >
-                {member.name.charAt(0)}
+                {member.charAt(0)}
               </div>
             ))}
-            {entry.members.length > 3 && (
+            {entry.projectMembers?.length > 3 && (
               <div className="w-8 h-8 rounded-full border-2 border-card bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
-                +{entry.members.length - 3}
+                +{entry.projectMembers.length - 3}
               </div>
             )}
           </div>
@@ -107,7 +116,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                    <iframe
                     width="100%"
                     height="100%"
-                    src={entry.videoLink}
+                    src={entry.googleDriveVideoLink}
                     title={`${entry.teamName} Pitch`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -115,19 +124,19 @@ export function EntryCard({ entry }: EntryCardProps) {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-accent uppercase tracking-widest mb-2">Challenge</h4>
-                  <p className="text-white">{entry.challenge}</p>
+                  <p className="text-white">{entry.challengeId}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-accent uppercase tracking-widest mb-2">About Project</h4>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{entry.description}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{entry.projectDescription}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-accent uppercase tracking-widest mb-2">Team Stellar</h4>
                   <div className="flex flex-wrap gap-2">
-                    {entry.members.map(m => (
-                      <Badge key={m.id} variant="secondary" className="flex gap-2 items-center">
+                    {entry.projectMembers?.map((m, i) => (
+                      <Badge key={i} variant="secondary" className="flex gap-2 items-center">
                         <Users className="w-3 h-3" />
-                        {m.name}
+                        {m}
                       </Badge>
                     ))}
                   </div>
