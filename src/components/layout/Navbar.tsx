@@ -49,14 +49,14 @@ export function Navbar() {
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,153,255,0.4)] transition-all group-hover:scale-110 overflow-hidden">
             <Image 
               src="/logo.png" 
-              alt="Batang Techno Logo" 
+              alt="CICS - SC Alangilan Logo" 
               width={40} 
               height={40} 
               className="object-contain"
             />
           </div>
           <span className="font-bold text-xl tracking-tight glow-accent text-white uppercase italic">
-            Batang <span className="text-accent">Techno</span>
+            CICS - SC Alangilan
           </span>
         </Link>
 
