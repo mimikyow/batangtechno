@@ -45,7 +45,7 @@ export default function Home() {
             Batang <span className="text-accent">Techno</span>
           </h1>
           <p className="text-xl md:text-2xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
-            Witness the next generation of celestial innovators bridging the gap through technology.
+            Building the Minds of Tomorrow's Innovators
           </p>
         </div>
       </section>
