@@ -156,7 +156,7 @@ export default function LoginPage() {
                 <DialogContent className="bg-card border-border">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
-                    <p className="text-sm text-muted-foreground">Enter your email for a reset link.</p>
+                    <p className="text-sm text-muted-foreground">Enter your email.</p>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">

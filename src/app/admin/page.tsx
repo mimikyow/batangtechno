@@ -62,6 +62,7 @@ export default function AdminPage() {
   const [newEntry, setNewEntry] = useState({
     teamName: "",
     projectSchool: "",
+    schoolLogoUrl: "",
     projectDescription: "",
     challengeId: CHALLENGES[0],
     googleDriveVideoLink: "",
@@ -230,6 +231,7 @@ export default function AdminPage() {
     setNewEntry({
       teamName: "",
       projectSchool: "",
+      schoolLogoUrl: "",
       projectDescription: "",
       challengeId: CHALLENGES[0],
       googleDriveVideoLink: "",
@@ -321,6 +323,10 @@ export default function AdminPage() {
                     <label className="text-[10px] font-bold uppercase text-accent tracking-widest">School</label>
                     <Input placeholder="" value={newEntry.projectSchool} onChange={e => setNewEntry({...newEntry, projectSchool: e.target.value})} />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">School Logo URL</label>
+                  <Input placeholder="" value={newEntry.schoolLogoUrl} onChange={e => setNewEntry({...newEntry, schoolLogoUrl: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Challenge</label>

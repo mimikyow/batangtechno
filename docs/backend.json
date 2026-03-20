@@ -114,21 +114,26 @@
           "type": "string",
           "description": "The school or institution the project members represent."
         },
+        "schoolLogoUrl": {
+          "type": "string",
+          "description": "A URL to the school's logo image.",
+          "format": "uri"
+        },
         "projectMembers": {
           "type": "array",
-          "description": "A list of names of the individual members of the project team. (Minimum three members expected.)",
+          "description": "A list of names of the individual members of the project team.",
           "items": {
             "type": "string"
           }
         },
         "googleDriveVideoLink": {
           "type": "string",
-          "description": "A Google Drive link to the project's video presentation, intended to be embedded and playable.",
+          "description": "A Google Drive link to the project's video presentation.",
           "format": "uri"
         },
         "thumbnailImageUrl": {
           "type": "string",
-          "description": "A URL to an image file used as a thumbnail or cover image for the project.",
+          "description": "A URL to an image file used as a thumbnail.",
           "format": "uri"
         },
         "projectDescription": {
@@ -137,7 +142,7 @@
         },
         "challengeId": {
           "type": "string",
-          "description": "Reference to the Challenge entity that this entry addresses. (Relationship: Challenge 1:N Entry)"
+          "description": "Reference to the Challenge entity."
         },
         "submissionDate": {
           "type": "string",
@@ -146,15 +151,15 @@
         },
         "overallScore": {
           "type": "number",
-          "description": "The aggregated final score for the entry, calculated and uploaded by an admin. Not publicly displayed."
+          "description": "The aggregated final score."
         },
         "finalRank": {
           "type": "number",
-          "description": "The final ranking of the entry, determined by an admin and used for displaying the top 3 projects."
+          "description": "The final ranking."
         },
         "adminApproved": {
           "type": "boolean",
-          "description": "Indicates if an admin has reviewed and approved the entry for judging and public display."
+          "description": "Indicates if an admin has approved the entry."
         }
       },
       "required": [
@@ -174,23 +179,23 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "JudgeAssignment",
       "type": "object",
-      "description": "Links a specific judge to an entry they are responsible for evaluating.",
+      "description": "Links a specific judge to an entry.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the JudgeAssignment entity."
+          "description": "Unique identifier."
         },
         "judgeId": {
           "type": "string",
-          "description": "Reference to the User entity (with 'judge' role) who is assigned to evaluate this entry. (Relationship: User 1:N JudgeAssignment)"
+          "description": "Reference to the User entity."
         },
         "entryId": {
           "type": "string",
-          "description": "Reference to the Entry entity that is assigned to this judge. (Relationship: Entry 1:N JudgeAssignment)"
+          "description": "Reference to the Entry entity."
         },
         "assignedDate": {
           "type": "string",
-          "description": "The date and time when this entry was assigned to the judge.",
+          "description": "Date of assignment.",
           "format": "date-time"
         }
       },
@@ -205,36 +210,36 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ScoreSubmission",
       "type": "object",
-      "description": "Records a judge's score for a specific entry against a particular judging criterion.",
+      "description": "Records a judge's score.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the ScoreSubmission entity."
+          "description": "Unique identifier."
         },
         "judgeId": {
           "type": "string",
-          "description": "Reference to the User entity (with 'judge' role) who submitted this score. (Relationship: User 1:N ScoreSubmission)"
+          "description": "Reference to the User entity."
         },
         "entryId": {
           "type": "string",
-          "description": "Reference to the Entry entity for which this score was submitted. (Relationship: Entry 1:N ScoreSubmission)"
+          "description": "Reference to the Entry entity."
         },
         "criterionId": {
           "type": "string",
-          "description": "Reference to the JudgingCriterion that was evaluated for this score. (Relationship: JudgingCriterion 1:N ScoreSubmission)"
+          "description": "Reference to the JudgingCriterion."
         },
         "scoreValue": {
           "type": "number",
-          "description": "The score given by the judge for this specific criterion."
+          "description": "The score given."
         },
         "submissionDate": {
           "type": "string",
-          "description": "The date and time when the judge submitted this score.",
+          "description": "Date of submission.",
           "format": "date-time"
         },
         "adminUploaded": {
           "type": "boolean",
-          "description": "Indicates if this score has been processed and included in the overall ranking calculation by an admin."
+          "description": "Indicates if processed by an admin."
         }
       },
       "required": [
@@ -262,11 +267,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores general user profile information. Access is typically for the user themselves or for administrators.",
+          "description": "Stores general user profile information.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique ID of the user, matching their external authentication UID."
+              "description": "The unique ID of the user."
             }
           ]
         }
@@ -282,7 +287,7 @@
           "params": [
             {
               "name": "adminId",
-              "description": "The unique ID of the administrator, matching their external authentication UID."
+              "description": "The unique ID of the administrator."
             }
           ]
         }
@@ -298,7 +303,7 @@
           "params": [
             {
               "name": "judgeId",
-              "description": "The unique ID of the judge, matching their external authentication UID."
+              "description": "The unique ID of the judge."
             }
           ]
         }

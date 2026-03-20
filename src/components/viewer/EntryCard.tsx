@@ -14,6 +14,7 @@ interface EntryCardProps {
     id: string;
     teamName: string;
     projectSchool: string;
+    schoolLogoUrl?: string;
     projectDescription: string;
     googleDriveVideoLink: string;
     thumbnailImageUrl: string;
@@ -26,6 +27,7 @@ interface EntryCardProps {
 export function EntryCard({ entry }: EntryCardProps) {
   const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
   const imageUrl = getGoogleDriveImageUrl(entry.thumbnailImageUrl) || "https://picsum.photos/seed/default/800/600";
+  const schoolLogoUrl = getGoogleDriveImageUrl(entry.schoolLogoUrl || "");
   const logo = getPlaceholderImage("hero-logo");
 
   return (
@@ -46,7 +48,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                 src={logo.imageUrl}
                 alt={logo.description}
                 fill
-                className="object-contain drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
+                className="object-contain"
                 data-ai-hint={logo.imageHint}
               />
             </div>
@@ -106,19 +108,17 @@ export function EntryCard({ entry }: EntryCardProps) {
         </p>
 
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
-          <div className="flex -space-x-2">
-            {entry.projectMembers?.slice(0, 3).map((member, i) => (
-              <div 
-                key={i} 
-                title={member}
-                className="w-8 h-8 rounded-full border-2 border-card bg-secondary flex items-center justify-center text-[10px] font-bold text-white"
-              >
-                {member.charAt(0)}
-              </div>
-            ))}
-            {entry.projectMembers?.length > 3 && (
-              <div className="w-8 h-8 rounded-full border-2 border-card bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
-                +{entry.projectMembers.length - 3}
+          <div className="relative w-8 h-8">
+            {schoolLogoUrl ? (
+              <Image 
+                src={schoolLogoUrl} 
+                alt={`${entry.projectSchool} Logo`} 
+                fill 
+                className="object-contain" 
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-white">
+                <School className="w-4 h-4" />
               </div>
             )}
           </div>
