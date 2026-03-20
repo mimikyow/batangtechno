@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit2, Zap, Users, ShieldAlert, Loader2, Trophy, AlertTriangle, UserPlus, Fingerprint } from "lucide-react";
+import { Plus, Trash2, Edit2, Zap, Users, ShieldAlert, Loader2, Trophy, AlertTriangle, UserPlus, KeyRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth 
 import { doc, collection, getDocs, setDoc } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseConfig } from "@/firebase/config";
 
 export default function AdminPage() {
@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isAddingJudge, setIsAddingJudge] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<"IDLE" | "CALCULATING" | "READY">("IDLE");
   const [rankedResults, setRankedResults] = useState<any[]>([]);
 
@@ -88,6 +89,22 @@ export default function AdminPage() {
     );
   }
 
+  const handleResetPassword = async () => {
+    if (!user?.email) return;
+    setIsResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      toast({ 
+        title: "Security Link Sent", 
+        description: `A password reset link has been dispatched to ${user.email}.` 
+      });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Reset Failed", description: error.message });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const handleCreateJudge = async () => {
     if (!newJudge.name || !newJudge.username || !newJudge.email) {
       toast({ variant: "destructive", title: "Error", description: "All fields are required." });
@@ -97,7 +114,6 @@ export default function AdminPage() {
     const automatedPassword = `BT_${newJudge.name.replace(/\s+/g, '')}`;
     
     try {
-      // Use a secondary app instance to create the user without logging out the admin
       const secondaryApp = !getApps().find(app => app.name === 'secondary') 
         ? initializeApp(firebaseConfig, 'secondary')
         : getApp('secondary');
@@ -107,7 +123,6 @@ export default function AdminPage() {
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newJudge.email, automatedPassword);
       const judgeUid = userCredential.user.uid;
 
-      // Store in role collection
       await setDoc(doc(db, "roles_judge", judgeUid), {
         id: judgeUid,
         externalAuthId: judgeUid,
@@ -117,7 +132,6 @@ export default function AdminPage() {
         role: "judge"
       });
 
-      // Store in users collection
       await setDoc(doc(db, "users", judgeUid), {
         id: judgeUid,
         externalAuthId: judgeUid,
@@ -158,7 +172,6 @@ export default function AdminPage() {
           const data = doc.data();
           if (data.scores) {
             const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
-            // Weighted calculation: 30% mastery, 30% innovation, 30% impact, 10% compliance
             const weightedAvg = (mastery * 0.3) + (innovation * 0.3) + (impact * 0.3) + (compliance * 0.1);
             totalWeightedScore += weightedAvg;
             submissionCount++;
@@ -228,7 +241,19 @@ export default function AdminPage() {
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Command Center</h1>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-4xl font-bold text-white uppercase italic tracking-tighter">Command Center</h1>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleResetPassword}
+              disabled={isResettingPassword}
+              className="border-white/10 text-muted-foreground hover:text-accent h-8 text-[10px] uppercase tracking-widest"
+            >
+              {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3 mr-2" />}
+              Change My Password
+            </Button>
+          </div>
           <p className="text-muted-foreground uppercase text-xs tracking-widest">Managing hackathon assets</p>
         </div>
         

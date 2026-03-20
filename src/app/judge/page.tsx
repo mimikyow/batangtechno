@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection } from "firebase/firestore";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
+import { sendPasswordResetEmail } from "firebase/auth";
 
 const CRITERIA = [
   { 
@@ -43,6 +45,7 @@ const CRITERIA = [
 export default function JudgePage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -54,6 +57,7 @@ export default function JudgePage() {
   const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [scores, setScores] = useState({
     mastery: 5,
     innovation: 5,
@@ -92,6 +96,22 @@ export default function JudgePage() {
     );
   }
 
+  const handleResetPassword = async () => {
+    if (!user?.email) return;
+    setIsResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      toast({ 
+        title: "Reset Dispatched", 
+        description: `A security link has been sent to ${user.email}. Check your inbox to change your password.` 
+      });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Action Failed", description: error.message });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
@@ -118,10 +138,24 @@ export default function JudgePage() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar: Entries List */}
         <div className="w-full md:w-80 flex flex-col gap-4">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{entries?.length || 0}</Badge>
-          </h2>
-          <div className="flex flex-col gap-2 max-h-[70vh] overflow-y-auto pr-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{entries?.length || 0}</Badge>
+            </h2>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleResetPassword}
+            disabled={isResettingPassword}
+            className="w-full border-white/10 text-muted-foreground hover:text-accent h-9 text-[10px] uppercase tracking-widest mb-4"
+          >
+            {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <KeyRound className="w-3 h-3 mr-2" />}
+            Change My Password
+          </Button>
+
+          <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2">
             {isEntriesLoading ? (
               <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
             ) : entries?.map(entry => (
