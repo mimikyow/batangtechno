@@ -19,25 +19,25 @@ const CRITERIA = [
     key: "mastery", 
     label: "Mastery and Use of Software Concepts", 
     weight: "30%", 
-    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution. Emphasis is placed on overall quality, efficiency, and appropriate use of available tools and resources." 
+    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution." 
   },
   { 
     key: "innovation", 
     label: "Novelty and Innovation", 
     weight: "30%", 
-    desc: "Assesses the originality of the project and the creativity behind its concept and implementation. This includes how the solution introduces new ideas, improves existing approaches, or applies technology in a unique and meaningful way." 
+    desc: "Assesses the originality of the project and the creativity behind its concept and implementation." 
   },
   { 
     key: "impact", 
     label: "Real-world Impact and Viability", 
     weight: "30%", 
-    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment. Consideration is given to feasibility, scalability, sustainability, and the overall benefit to users or communities." 
+    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment." 
   },
   { 
     key: "compliance", 
     label: "Compliance to Rules and Restrictions", 
     weight: "10%", 
-    desc: "Determines the extent to which the project follows all competition guidelines, technical constraints, ethical standards, and submission requirements. Failure to comply may result in point deductions or disqualification." 
+    desc: "Determines the extent to which the project follows all competition guidelines." 
   },
 ];
 
@@ -87,7 +87,7 @@ export default function JudgePage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant access to the Judge Panel. Please login with judge credentials.</p>
+        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant access to the Judge Panel.</p>
         <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20">
           Go to Login
         </Button>
@@ -102,7 +102,7 @@ export default function JudgePage() {
       await sendPasswordResetEmail(auth, user.email);
       toast({ 
         title: "Reset Link Dispatched", 
-        description: `A security link has been sent to ${user.email}. If it doesn't arrive, contact the Admin.` 
+        description: `A security link has been sent to ${user.email}.` 
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Action Failed", description: error.message });
@@ -124,7 +124,7 @@ export default function JudgePage() {
 
     toast({
       title: "Score Recorded",
-      description: `Evaluation for ${selectedEntry.teamName} has been transmitted to the Command Center.`
+      description: `Evaluation for ${selectedEntry.teamName} has been transmitted.`
     });
     setSelectedEntry(null);
     setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });

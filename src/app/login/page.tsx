@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/card";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -27,20 +27,21 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      // If environment credentials match, ensure the user exists or is verified
+      const isAdminByEnv = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       // 1. Check if user is the environment-defined Admin
-      const isAdmin = user.email === ADMIN_EMAIL;
-      
-      // Auto-provision admin doc if matching ENV email
-      if (isAdmin) {
+      if (isAdminByEnv || user.email === ADMIN_EMAIL) {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           externalAuthId: user.uid,
@@ -49,7 +50,7 @@ export default function LoginPage() {
           role: "admin"
         }, { merge: true });
         
-        toast({ title: "Command Access Authorized", description: `Logged in as Primary Admin` });
+        toast({ title: "Command Access Authorized", description: "Logged in as Primary Admin" });
         router.push("/admin");
         return;
       }
@@ -87,7 +88,7 @@ export default function LoginPage() {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({ 
         title: "Security Link Dispatched", 
-        description: "Check your inbox (and spam folder) for instructions." 
+        description: "Check your inbox (and spam folder)." 
       });
       setIsResetOpen(false);
     } catch (error: any) {
@@ -163,7 +164,7 @@ export default function LoginPage() {
                 <DialogContent className="bg-card border-border">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
-                    <CardDescription>Enter your email to receive a secure reset link. Check your spam folder if it doesn't arrive within 2 minutes.</CardDescription>
+                    <CardDescription>Enter your email to receive a secure reset link.</CardDescription>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">

@@ -37,7 +37,6 @@ service cloud.firestore {
 
     match /roles_admin/{adminId} {
       allow get: if isOwner(adminId) || isAdmin();
-      // Allow any user to create their own admin doc IF the UI logic permits it (provisioning)
       allow create: if isOwner(adminId);
       allow list, update, delete: if isAdmin();
     }
@@ -60,10 +59,8 @@ service cloud.firestore {
     }
 
     match /entries/{entryId} {
-      // Public can see approved entries. 
-      // Note: Query MUST include where("adminApproved", "==", true) to match this rule.
-      allow list: if isAdmin() || isJudge() || (request.query.limit <= 100 && request.query.offset >= 0);
-      allow get: if isAdmin() || isJudge() || resource.data.adminApproved == true;
+      // Public can see entries (Viewer Mode)
+      allow list, get: if true;
       
       allow create, update, delete: if isAdmin();
 
