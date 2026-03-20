@@ -1,19 +1,29 @@
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MOCK_ENTRIES } from "@/lib/constants";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Play, Info, AlertCircle } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Image from "next/image";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 export default function JudgePage() {
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const router = useRouter();
   const { toast } = useToast();
+
+  const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
+  const adminDocRef = useMemoFirebase(() => user ? doc(db, "roles_admin", user.uid) : null, [db, user]);
+  
+  const { data: judgeRole, isLoading: isJudgeChecking } = useDoc(judgeDocRef);
+  const { data: adminRole, isLoading: isAdminChecking } = useDoc(adminDocRef);
+
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [scores, setScores] = useState({
     innovation: 5,
@@ -22,6 +32,37 @@ export default function JudgePage() {
     presentation: 5,
     comment: ""
   });
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || isJudgeChecking || isAdminChecking) {
+    return (
+      <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-12 h-12 text-accent animate-spin" />
+        <p className="text-muted-foreground uppercase tracking-widest text-xs">Scanning Mission Logs...</p>
+      </div>
+    );
+  }
+
+  // Judges OR Admins can see this page
+  if (!judgeRole && !adminRole) {
+    return (
+      <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
+        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-10 h-10 text-destructive" />
+        </div>
+        <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
+        <p className="text-muted-foreground max-w-md">Your credentials do not grant access to the Judge Panel. Please consult the mission coordinator.</p>
+        <Button onClick={() => router.push("/")} className="mt-8 border-white/20" variant="outline">
+          Return to Hub
+        </Button>
+      </div>
+    );
+  }
 
   const handleSubmitScore = () => {
     toast({

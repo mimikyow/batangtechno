@@ -1,24 +1,32 @@
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CHALLENGES, MOCK_ENTRIES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit2, UploadCloud, Save, Users, Video, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, Edit2, UploadCloud, Save, Users, Video, Image as ImageIcon, ShieldAlert, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 export default function AdminPage() {
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const router = useRouter();
   const { toast } = useToast();
+
+  const adminDocRef = useMemoFirebase(() => user ? doc(db, "roles_admin", user.uid) : null, [db, user]);
+  const { data: adminRole, isLoading: isAdminChecking } = useDoc(adminDocRef);
+
   const [entries, setEntries] = useState(MOCK_ENTRIES);
   const [isAdding, setIsAdding] = useState(false);
   
-  // Form State
   const [newEntry, setNewEntry] = useState({
     teamName: "",
     school: "",
@@ -28,6 +36,36 @@ export default function AdminPage() {
     thumbnailUrl: "",
     members: ["Member 1", "Member 2", "Member 3"]
   });
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || isAdminChecking) {
+    return (
+      <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-12 h-12 text-accent animate-spin" />
+        <p className="text-muted-foreground uppercase tracking-widest text-xs">Accessing Command Center...</p>
+      </div>
+    );
+  }
+
+  if (!adminRole) {
+    return (
+      <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
+        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-10 h-10 text-destructive" />
+        </div>
+        <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
+        <p className="text-muted-foreground max-w-md">Your credentials do not grant administrative privileges. Please contact the high command for clearance.</p>
+        <Button onClick={() => router.push("/")} className="mt-8 border-white/20" variant="outline">
+          Return to Hub
+        </Button>
+      </div>
+    );
+  }
 
   const handleAddMember = () => {
     setNewEntry(prev => ({ ...prev, members: [...prev.members, `Member ${prev.members.length + 1}`] }));

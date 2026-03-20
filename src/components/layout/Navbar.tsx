@@ -1,21 +1,44 @@
-
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Rocket, ShieldCheck, Telescope, Menu } from "lucide-react";
+import { Rocket, ShieldCheck, Telescope, Menu, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
-const navItems = [
-  { name: "Public Board", href: "/", icon: Telescope, role: "Viewer" },
-  { name: "Judge Panel", href: "/judge", icon: ShieldCheck, role: "Judge" },
-  { name: "Command Center", href: "/admin", icon: Rocket, role: "Admin" },
-];
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const db = useFirestore();
+
+  // Check roles via DBAC existence
+  const adminDocRef = useMemoFirebase(() => user ? doc(db, "roles_admin", user.uid) : null, [db, user]);
+  const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
+  
+  const { data: adminRole } = useDoc(adminDocRef);
+  const { data: judgeRole } = useDoc(judgeDocRef);
+
+  const isAdmin = !!adminRole;
+  const isJudge = !!judgeRole;
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/");
+  };
+
+  const navItems = [
+    { name: "Public Board", href: "/", icon: Telescope, show: true },
+    { name: "Judge Panel", href: "/judge", icon: ShieldCheck, show: isJudge || isAdmin },
+    { name: "Command Center", href: "/admin", icon: Rocket, show: isAdmin },
+  ];
+
+  const visibleItems = navItems.filter(item => item.show);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/60 backdrop-blur-lg">
@@ -31,7 +54,7 @@ export function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -47,6 +70,22 @@ export function Navbar() {
               </Link>
             );
           })}
+          
+          {!isUserLoading && (
+            user ? (
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-white">
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            ) : (
+              <Link href="/login">
+                <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/10">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )
+          )}
         </div>
 
         {/* Mobile Nav */}
@@ -59,7 +98,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="bg-background border-border">
               <div className="flex flex-col gap-4 mt-8">
-                {navItems.map((item) => (
+                {visibleItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -72,6 +111,21 @@ export function Navbar() {
                     {item.name}
                   </Link>
                 ))}
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  {user ? (
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={handleLogout}>
+                      <LogOut className="w-5 h-5 mr-4" />
+                      Logout
+                    </Button>
+                  ) : (
+                    <Link href="/login">
+                      <Button variant="ghost" className="w-full justify-start text-accent">
+                        <LogIn className="w-5 h-5 mr-4" />
+                        Login
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
