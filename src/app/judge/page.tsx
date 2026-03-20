@@ -227,7 +227,7 @@ export default function JudgePage() {
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-white">Judge's Final Thoughts</label>
                       <Textarea 
-                        placeholder="Internal notes for committee..." 
+                        placeholder="" 
                         className="bg-black/20 border-white/10 h-24 text-sm"
                         value={scores.comment}
                         onChange={e => setScores({...scores, comment: e.target.value})}

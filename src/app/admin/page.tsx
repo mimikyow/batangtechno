@@ -110,7 +110,7 @@ export default function AdminPage() {
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, user.email);
-      toast({ title: "Security Link Sent" });
+      toast({ title: "Reset Link Dispatched" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
     } finally {
@@ -274,15 +274,15 @@ export default function AdminPage() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Full Name</label>
-                  <Input placeholder="Judge Name" value={newJudge.name} onChange={e => setNewJudge({...newJudge, name: e.target.value})} />
+                  <Input placeholder="" value={newJudge.name} onChange={e => setNewJudge({...newJudge, name: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Username</label>
-                  <Input placeholder="handle" value={newJudge.username} onChange={e => setNewJudge({...newJudge, username: e.target.value})} />
+                  <Input placeholder="" value={newJudge.username} onChange={e => setNewJudge({...newJudge, username: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Email</label>
-                  <Input type="email" placeholder="judge@email.com" value={newJudge.email} onChange={e => setNewJudge({...newJudge, email: e.target.value})} />
+                  <Input type="email" placeholder="" value={newJudge.email} onChange={e => setNewJudge({...newJudge, email: e.target.value})} />
                 </div>
                 <div className="bg-white/5 p-3 rounded text-[10px] text-muted-foreground italic">
                   Password: BT_{newJudge.name.replace(/\s+/g, '') || "Name"}
@@ -309,11 +309,11 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Team Name</label>
-                    <Input placeholder="Team Star" value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} />
+                    <Input placeholder="" value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase text-accent tracking-widest">School</label>
-                    <Input placeholder="School Name" value={newEntry.projectSchool} onChange={e => setNewEntry({...newEntry, projectSchool: e.target.value})} />
+                    <Input placeholder="" value={newEntry.projectSchool} onChange={e => setNewEntry({...newEntry, projectSchool: e.target.value})} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -327,11 +327,11 @@ export default function AdminPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Google Drive Video Link</label>
-                  <Input placeholder="https://drive.google.com/..." value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
+                  <Input placeholder="" value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Thumbnail Image URL</label>
-                  <Input placeholder="https://..." value={newEntry.thumbnailImageUrl} onChange={e => setNewEntry({...newEntry, thumbnailImageUrl: e.target.value})} />
+                  <Input placeholder="" value={newEntry.thumbnailImageUrl} onChange={e => setNewEntry({...newEntry, thumbnailImageUrl: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Description</label>

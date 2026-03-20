@@ -35,12 +35,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // Check if credentials match the system admin defined in env
       const isAdminByEnv = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       if (isAdminByEnv || user.email === ADMIN_EMAIL) {
+        // Auto-provision admin role in firestore if it's the master admin
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           externalAuthId: user.uid,
@@ -77,17 +79,17 @@ export default function LoginPage() {
 
   const handleForgotPassword = async () => {
     if (!resetEmail) {
-      toast({ variant: "destructive", title: "Error" });
+      toast({ variant: "destructive", title: "Email required" });
       return;
     }
 
     setIsResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ title: "Security Link Dispatched" });
+      toast({ title: "Reset Link Dispatched" });
       setIsResetOpen(false);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Failed", description: error.message });
+      toast({ variant: "destructive", title: "Action Failed", description: error.message });
     } finally {
       setIsResetLoading(false);
     }
@@ -120,7 +122,7 @@ export default function LoginPage() {
               </div>
               <Input 
                 type="email" 
-                placeholder="email@example.com" 
+                placeholder="" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-black/20 border-white/10 text-white placeholder:text-muted-foreground focus:border-accent transition-all"
@@ -134,7 +136,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Input 
                   type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••" 
+                  placeholder="" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-black/20 border-white/10 text-white focus:border-accent transition-all pr-10"
@@ -166,7 +168,7 @@ export default function LoginPage() {
                       <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Email Address</label>
                       <Input 
                         type="email" 
-                        placeholder="your@email.com" 
+                        placeholder="" 
                         value={resetEmail}
                         onChange={e => setResetEmail(e.target.value)}
                       />
