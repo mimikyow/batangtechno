@@ -47,7 +47,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/60 backdrop-blur-lg">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,153,255,0.4)] transition-all group-hover:scale-110 overflow-hidden">
+          <div className="w-10 h-10 flex items-center justify-center transition-all group-hover:scale-110">
             {logo && (
               <Image 
                 src={logo.imageUrl} 

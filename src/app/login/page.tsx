@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -5,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -48,7 +49,7 @@ export default function LoginPage() {
           role: "admin"
         }, { merge: true });
         
-        toast({ title: "Command Access Authorized", description: "Logged in as Primary Admin" });
+        toast({ title: "Command Access Authorized" });
         router.push("/admin");
         return;
       }
@@ -56,10 +57,10 @@ export default function LoginPage() {
       const judgeDoc = await getDoc(doc(db, "roles_judge", user.uid));
 
       if (judgeDoc.exists()) {
-        toast({ title: "Judge Session Initiated", description: `Logged in as ${judgeDoc.data().name}` });
+        toast({ title: "Judge Session Initiated" });
         router.push("/judge");
       } else {
-        toast({ title: "Access Granted", description: "Standard Viewer Session" });
+        toast({ title: "Access Granted" });
         router.push("/");
       }
 
@@ -103,7 +104,7 @@ export default function LoginPage() {
 
       <Card className="w-full max-w-md glass-card relative z-10 border-white/10 shadow-2xl">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
+          <div className="mx-auto w-16 h-16 flex items-center justify-center">
             <Rocket className="w-8 h-8 text-accent animate-pulse" />
           </div>
           <CardTitle className="text-3xl font-black italic glow-accent text-white uppercase">
