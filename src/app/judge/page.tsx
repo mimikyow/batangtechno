@@ -101,8 +101,7 @@ export default function JudgePage() {
     try {
       await sendPasswordResetEmail(auth, user.email);
       toast({ 
-        title: "Reset Link Dispatched", 
-        description: `A security link has been sent to ${user.email}.` 
+        title: "Reset Link Dispatched"
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Action Failed", description: error.message });

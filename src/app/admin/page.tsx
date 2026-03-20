@@ -29,7 +29,6 @@ export default function AdminPage() {
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
   const isAdmin = user?.email === ADMIN_EMAIL;
 
-  // Auto-provision admin document if the user matches the ENV email but doesn't have a doc yet
   useEffect(() => {
     if (user && isAdmin) {
       const provisionAdmin = async () => {
@@ -111,8 +110,7 @@ export default function AdminPage() {
     try {
       await sendPasswordResetEmail(auth, user.email);
       toast({ 
-        title: "Security Link Sent", 
-        description: `Check your inbox (and spam) at ${user.email}.` 
+        title: "Security Link Sent"
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
@@ -150,7 +148,7 @@ export default function AdminPage() {
 
       toast({ 
         title: "Judge Account Ready", 
-        description: `Credentials: ${newJudge.email} / ${automatedPassword}. Ensure email templates are active in console.` 
+        description: `Credentials: ${newJudge.email} / ${automatedPassword}.` 
       });
       
       setNewJudge({ name: "", username: "", email: "" });
@@ -179,7 +177,6 @@ export default function AdminPage() {
           const data = doc.data();
           if (data.scores) {
             const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
-            // 30/30/30/10 weighted logic
             const weightedAvg = (mastery * 0.3) + (innovation * 0.3) + (impact * 0.3) + (compliance * 0.1);
             totalWeightedScore += weightedAvg;
             submissionCount++;
@@ -267,7 +264,7 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-4">
           <Dialog open={isAddingJudge} onOpenChange={setIsAddingJudge}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest">
+              <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 hover:text-white uppercase text-xs font-bold tracking-widest">
                 <UserPlus className="w-4 h-4 mr-2" /> Register Judge
               </Button>
             </DialogTrigger>
@@ -351,7 +348,7 @@ export default function AdminPage() {
 
           <Dialog open={isProcessing} onOpenChange={setIsProcessing}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest">
+              <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 hover:text-white uppercase text-xs font-bold tracking-widest">
                 <Zap className="w-4 h-4 mr-2" /> Leaderboard Engine
               </Button>
             </DialogTrigger>

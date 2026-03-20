@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,13 +34,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // If environment credentials match, ensure the user exists or is verified
       const isAdminByEnv = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 1. Check if user is the environment-defined Admin
       if (isAdminByEnv || user.email === ADMIN_EMAIL) {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
@@ -55,7 +53,6 @@ export default function LoginPage() {
         return;
       }
       
-      // 2. Check if user is a Judge in Firestore
       const judgeDoc = await getDoc(doc(db, "roles_judge", user.uid));
 
       if (judgeDoc.exists()) {
@@ -87,8 +84,7 @@ export default function LoginPage() {
     try {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({ 
-        title: "Security Link Dispatched", 
-        description: "Check your inbox (and spam folder)." 
+        title: "Security Link Dispatched"
       });
       setIsResetOpen(false);
     } catch (error: any) {
