@@ -7,7 +7,8 @@ import { CHALLENGES } from "@/lib/constants";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Filter, Loader2, Trophy, Rocket } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import Image from "next/image";
@@ -17,7 +18,7 @@ export default function Home() {
   const [filter, setFilter] = useState("ALL");
   const db = useFirestore();
 
-  // Updated query to filter for adminApproved entries as required by security rules
+  // Query to filter for adminApproved entries as required by security rules
   const entriesQuery = useMemoFirebase(() => {
     return query(collection(db, "entries"), where("adminApproved", "==", true));
   }, [db]);
@@ -30,6 +31,8 @@ export default function Home() {
     const matchesFilter = filter === "ALL" || entry.challengeId === filter;
     return matchesSearch && matchesFilter;
   });
+
+  const winners = (entries || []).filter(e => e.finalRank && e.finalRank <= 3);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -62,65 +65,94 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Winners Podium */}
-      {entries && <TopThree entries={entries} />}
-
-      {/* All Entries Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Discovery Hub</h2>
-            <p className="text-muted-foreground">Explore all {filteredEntries.length} entries in the constellation</p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search teams or schools..." 
-                className="pl-10 bg-secondary/50 border-border focus:ring-accent"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+      {/* Main Content with Tabs */}
+      <section className="container mx-auto px-4 py-12">
+        <Tabs defaultValue="all" className="w-full">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Discovery Hub</h2>
+              <p className="text-muted-foreground">Explore the constellation of innovation</p>
             </div>
             
-            <div className="relative w-full sm:w-72">
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="bg-secondary/50 border-border text-xs">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-3.5 h-3.5" />
-                    <SelectValue placeholder="All Categories" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border text-white">
-                  <SelectItem value="ALL">All Categories</SelectItem>
-                  {CHALLENGES.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <TabsList className="bg-white/5 border border-white/10 p-1 h-12">
+              <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-6">
+                <Rocket className="w-4 h-4" /> All Missions
+              </TabsTrigger>
+              <TabsTrigger value="winners" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white gap-2 px-6">
+                <Trophy className="w-4 h-4" /> Hall of Fame
+              </TabsTrigger>
+            </TabsList>
           </div>
-        </div>
 
-        {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <Loader2 className="w-10 h-10 text-accent animate-spin" />
-            <p className="text-muted-foreground uppercase text-xs tracking-widest">Scanning Deep Space...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredEntries.map(entry => (
-              <EntryCard key={entry.id} entry={entry as any} />
-            ))}
-          </div>
-        )}
-        
-        {!isLoading && filteredEntries.length === 0 && (
-          <div className="py-20 text-center">
-            <p className="text-muted-foreground italic">No entries found in this quadrant...</p>
-          </div>
-        )}
+          <TabsContent value="all" className="mt-0">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input 
+                  placeholder="Search teams or schools..." 
+                  className="w-full h-10 pl-10 pr-4 rounded-md bg-secondary/50 border border-border focus:ring-1 focus:ring-accent outline-none text-sm transition-all"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              
+              <div className="relative w-full sm:w-72">
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger className="bg-secondary/50 border-border text-xs">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-3.5 h-3.5" />
+                      <SelectValue placeholder="All Categories" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border text-white">
+                    <SelectItem value="ALL">All Categories</SelectItem>
+                    {CHALLENGES.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {isLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-10 h-10 text-accent animate-spin" />
+                <p className="text-muted-foreground uppercase text-xs tracking-widest">Scanning Deep Space...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {filteredEntries.map(entry => (
+                  <EntryCard key={entry.id} entry={entry as any} />
+                ))}
+              </div>
+            )}
+            
+            {!isLoading && filteredEntries.length === 0 && (
+              <div className="py-20 text-center glass-card rounded-2xl border-dashed">
+                <p className="text-muted-foreground italic">No entries found in this quadrant...</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="winners" className="mt-0">
+            {isLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-10 h-10 text-accent animate-spin" />
+                <p className="text-muted-foreground uppercase text-xs tracking-widest">Identifying Champions...</p>
+              </div>
+            ) : winners.length > 0 ? (
+              <TopThree entries={entries || []} />
+            ) : (
+              <div className="py-20 text-center glass-card rounded-2xl border-dashed">
+                <Trophy className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Winners Not Yet Announced</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto italic">
+                  The Command Center is currently reviewing stellar evaluations. Check back soon for the final rankings.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </section>
     </div>
   );
