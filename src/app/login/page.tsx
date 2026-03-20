@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
+import { Rocket, ShieldCheck, User as UserIcon, Loader2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
@@ -35,14 +35,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Check if credentials match the system admin defined in env
-      const isAdminByEnv = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
-
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      const isAdminByEnv = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
+
       if (isAdminByEnv || user.email === ADMIN_EMAIL) {
-        // Auto-provision admin role in firestore if it's the master admin
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           externalAuthId: user.uid,

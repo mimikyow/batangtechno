@@ -147,7 +147,7 @@ export default function AdminPage() {
 
       toast({ 
         title: "Judge Account Ready", 
-        description: `Credentials: ${newJudge.email} / ${automatedPassword}.` 
+        description: `Credentials: ${newJudge.email} / ${automatedPassword}` 
       });
       
       setNewJudge({ name: "", username: "", email: "" });
@@ -283,9 +283,6 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Email</label>
                   <Input type="email" placeholder="" value={newJudge.email} onChange={e => setNewJudge({...newJudge, email: e.target.value})} />
-                </div>
-                <div className="bg-white/5 p-3 rounded text-[10px] text-muted-foreground italic">
-                  Password: BT_{newJudge.name.replace(/\s+/g, '') || "Name"}
                 </div>
               </div>
               <DialogFooter>

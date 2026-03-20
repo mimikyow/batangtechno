@@ -130,7 +130,6 @@ export default function JudgePage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar: Entries List */}
         <div className="w-full md:w-80 flex flex-col gap-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -169,7 +168,6 @@ export default function JudgePage() {
           </div>
         </div>
 
-        {/* Main Content: Judging Form */}
         <div className="flex-1">
           {selectedEntry ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">

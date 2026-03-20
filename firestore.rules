@@ -5,11 +5,7 @@ service cloud.firestore {
 
     /**
      * BATANG TECHNO SECURITY RULES
-     * 
-     * Implements DBAC (Database-Based Access Control) for Admins and Judges.
      */
-
-    // --- Helper Functions ---
 
     function isSignedIn() {
       return request.auth != null;
@@ -26,8 +22,6 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
-    // --- Collection Rules ---
 
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
@@ -60,9 +54,7 @@ service cloud.firestore {
     }
 
     match /entries/{entryId} {
-      // Public can see entries (Viewer Mode)
       allow list, get: if true;
-      
       allow create, update, delete: if isAdmin();
 
       match /scoreSubmissions/{scoreSubmissionId} {
