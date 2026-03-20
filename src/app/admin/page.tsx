@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit2, UploadCloud, Save, Users, Video, Image as ImageIcon, ShieldAlert, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Edit2, UploadCloud, Users, ShieldAlert, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, setDoc, collection, serverTimestamp, deleteDoc, updateDoc } from "firebase/firestore";
+import { doc, collection } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function AdminPage() {
@@ -46,22 +46,6 @@ export default function AdminPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleGrantAdmin = async () => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, "roles_admin", user.uid), {
-        id: user.uid,
-        externalAuthId: user.uid,
-        email: user.email,
-        name: user.displayName || "Admin User",
-        role: "admin"
-      });
-      toast({ title: "Access Granted", description: "You are now a Command Center Administrator." });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
-    }
-  };
-
   if (isUserLoading || isAdminChecking) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
@@ -78,16 +62,10 @@ export default function AdminPage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant administrative privileges. Please contact the high command for clearance.</p>
-        
-        <div className="flex flex-col gap-4">
-          <Button onClick={handleGrantAdmin} className="bg-accent hover:bg-accent/80 text-white font-bold">
-            <Sparkles className="w-4 h-4 mr-2" /> Setup Developer Access
-          </Button>
-          <Button onClick={() => router.push("/")} variant="outline" className="border-white/20">
-            Return to Hub
-          </Button>
-        </div>
+        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant administrative privileges. Please login with admin credentials.</p>
+        <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20">
+          Go to Login
+        </Button>
       </div>
     );
   }

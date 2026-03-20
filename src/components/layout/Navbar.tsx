@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Rocket, ShieldCheck, Telescope, Menu, LogOut, LogIn } from "lucide-react";
+import { Rocket, ShieldCheck, Telescope, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
@@ -71,20 +72,11 @@ export function Navbar() {
             );
           })}
           
-          {!isUserLoading && (
-            user ? (
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-white">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            ) : (
-              <Link href="/login">
-                <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/10">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Login
-                </Button>
-              </Link>
-            )
+          {user && (
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-white">
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           )}
         </div>
 
@@ -111,21 +103,14 @@ export function Navbar() {
                     {item.name}
                   </Link>
                 ))}
-                <div className="mt-4 border-t border-white/10 pt-4">
-                  {user ? (
+                {user && (
+                  <div className="mt-4 border-t border-white/10 pt-4">
                     <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={handleLogout}>
                       <LogOut className="w-5 h-5 mr-4" />
                       Logout
                     </Button>
-                  ) : (
-                    <Link href="/login">
-                      <Button variant="ghost" className="w-full justify-start text-accent">
-                        <LogIn className="w-5 h-5 mr-4" />
-                        Login
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>

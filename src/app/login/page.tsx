@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,28 +16,60 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
+  const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
-        toast({ title: "Account Created", description: "Your stellar identity has been registered." });
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        toast({ title: "Welcome back", description: "Authentication successful." });
+      let userCredential;
+      try {
+        // Attempt login first
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } catch (error: any) {
+        // If user doesn't exist, create them for this prototype
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          throw error;
+        }
       }
-      router.push("/");
+
+      const user = userCredential.user;
+
+      // Hardcoded Role Assignment logic
+      if (email === "admin@email.com") {
+        await setDoc(doc(db, "roles_admin", user.uid), {
+          id: user.uid,
+          email: user.email,
+          role: "admin",
+          name: "System Admin"
+        });
+      } else if (email === "judge@email.com") {
+        await setDoc(doc(db, "roles_judge", user.uid), {
+          id: user.uid,
+          email: user.email,
+          role: "judge",
+          name: "Panel Judge"
+        });
+      }
+
+      toast({ title: "Access Granted", description: `Welcome back, ${email === 'admin@email.com' ? 'Administrator' : email === 'judge@email.com' ? 'Judge' : 'User'}.` });
+      
+      // Redirect based on role
+      if (email === "admin@email.com") router.push("/admin");
+      else if (email === "judge@email.com") router.push("/judge");
+      else router.push("/");
+
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
         title: "Auth Failed", 
-        description: error.message || "Please check your credentials." 
+        description: error.message || "Invalid credentials." 
       });
     } finally {
       setIsLoading(false);
@@ -56,11 +89,16 @@ export default function LoginPage() {
             <Rocket className="w-8 h-8 text-accent animate-pulse" />
           </div>
           <CardTitle className="text-3xl font-black italic glow-accent text-white uppercase">
-            {isSignUp ? "Register Identity" : "Secure Access"}
+            Secure Access
           </CardTitle>
           <CardDescription className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
-            {isSignUp ? "Create your credentials for the nebula" : "Enter the Batang Techno Nebula"}
+            Enter your credentials for the Batang Techno Nebula
           </CardDescription>
+          <div className="bg-white/5 p-3 rounded-md text-[10px] text-muted-foreground text-left space-y-1">
+            <p className="font-bold text-accent">PROTOTYPE CREDENTIALS:</p>
+            <p>Admin: admin@email.com / admin</p>
+            <p>Judge: judge@email.com / judge</p>
+          </div>
         </CardHeader>
         <form onSubmit={handleAuth}>
           <CardContent className="space-y-4">
@@ -70,7 +108,7 @@ export default function LoginPage() {
               </div>
               <Input 
                 type="email" 
-                placeholder="commander@techno.space" 
+                placeholder="email@example.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-black/20 border-white/10 text-white placeholder:text-muted-foreground focus:border-accent transition-all"
@@ -100,19 +138,11 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
+                  Verifying...
                 </>
               ) : (
-                isSignUp ? "Create Account" : "Initiate Connection"
+                "Initiate Connection"
               )}
-            </Button>
-            <Button 
-              type="button" 
-              variant="link" 
-              className="text-[10px] text-muted-foreground uppercase italic"
-              onClick={() => setIsSignUp(!isSignUp)}
-            >
-              {isSignUp ? "Already have an account? Login" : "Need an account? Sign Up"}
             </Button>
           </CardFooter>
         </form>

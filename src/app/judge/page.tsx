@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, setDoc } from "firebase/firestore";
+import { doc, collection } from "firebase/firestore";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function JudgePage() {
@@ -43,22 +43,6 @@ export default function JudgePage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleGrantJudge = async () => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, "roles_judge", user.uid), {
-        id: user.uid,
-        externalAuthId: user.uid,
-        email: user.email,
-        name: user.displayName || "Judge User",
-        role: "judge"
-      });
-      toast({ title: "Access Granted", description: "You are now a certified mission Judge." });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
-    }
-  };
-
   if (isUserLoading || isJudgeChecking || isAdminChecking) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
@@ -75,16 +59,10 @@ export default function JudgePage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant access to the Judge Panel. Please consult the mission coordinator.</p>
-        
-        <div className="flex flex-col gap-4">
-          <Button onClick={handleGrantJudge} className="bg-accent hover:bg-accent/80 text-white font-bold">
-            <Sparkles className="w-4 h-4 mr-2" /> Setup Developer Access
-          </Button>
-          <Button onClick={() => router.push("/")} variant="outline" className="border-white/20">
-            Return to Hub
-          </Button>
-        </div>
+        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant access to the Judge Panel. Please login with judge credentials.</p>
+        <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20">
+          Go to Login
+        </Button>
       </div>
     );
   }
