@@ -35,7 +35,7 @@ export function Navbar() {
 
   const navItems = [
     { name: "Public Board", href: "/", icon: Telescope, show: true },
-    { name: "Judge Panel", href: "/judge", icon: ShieldCheck, show: isJudge || isAdmin },
+    { name: "Judge Panel", href: "/judge", icon: ShieldCheck, show: isJudge },
     { name: "Command Center", href: "/admin", icon: Rocket, show: isAdmin },
   ];
 

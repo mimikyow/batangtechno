@@ -20,10 +20,8 @@ export default function JudgePage() {
   const { toast } = useToast();
 
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
-  const adminDocRef = useMemoFirebase(() => user ? doc(db, "roles_admin", user.uid) : null, [db, user]);
   
   const { data: judgeRole, isLoading: isJudgeChecking } = useDoc(judgeDocRef);
-  const { data: adminRole, isLoading: isAdminChecking } = useDoc(adminDocRef);
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
   const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
@@ -43,7 +41,7 @@ export default function JudgePage() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || isJudgeChecking || isAdminChecking) {
+  if (isUserLoading || isJudgeChecking) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-12 h-12 text-accent animate-spin" />
@@ -52,7 +50,7 @@ export default function JudgePage() {
     );
   }
 
-  if (!judgeRole && !adminRole) {
+  if (!judgeRole) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
         <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
