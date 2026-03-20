@@ -112,7 +112,7 @@ export default function AdminPage() {
       await sendPasswordResetEmail(auth, user.email);
       toast({ 
         title: "Security Link Sent", 
-        description: `Check your inbox at ${user.email} for reset instructions.` 
+        description: `Check your inbox (and spam) at ${user.email}. Domain verification in Firebase Console helps prevent spam.` 
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
@@ -150,7 +150,7 @@ export default function AdminPage() {
 
       toast({ 
         title: "Judge Account Ready", 
-        description: `Credentials: ${newJudge.email} / ${automatedPassword}. Note: Ensure Firebase templates are active.` 
+        description: `Credentials: ${newJudge.email} / ${automatedPassword}. Ensure email templates are active in console.` 
       });
       
       setNewJudge({ name: "", username: "", email: "" });

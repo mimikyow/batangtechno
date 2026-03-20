@@ -86,8 +86,8 @@ export default function LoginPage() {
     try {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({ 
-        title: "Email Dispatched", 
-        description: "Check your inbox for password reset instructions. Ensure your Firebase Project has email templates enabled." 
+        title: "Security Link Dispatched", 
+        description: "Check your inbox (and spam folder) for instructions. Verify that custom domains are configured in Firebase Console." 
       });
       setIsResetOpen(false);
     } catch (error: any) {
@@ -163,7 +163,7 @@ export default function LoginPage() {
                 <DialogContent className="bg-card border-border">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
-                    <CardDescription>Enter your email to receive a secure reset link via Firebase Auth.</CardDescription>
+                    <CardDescription>Enter your email to receive a secure reset link. Check your spam folder if it doesn't arrive within 2 minutes.</CardDescription>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">
