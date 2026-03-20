@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Mail } from "lucide-react";
+import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
@@ -25,6 +26,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -33,16 +36,18 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check for administrative or judge roles in Firestore
-      const adminDoc = await getDoc(doc(db, "roles_admin", user.uid));
+      // 1. Check if user is the environment-defined Admin
+      const isAdmin = user.email === ADMIN_EMAIL;
+      
+      // 2. Check if user is a Judge in Firestore
       const judgeDoc = await getDoc(doc(db, "roles_judge", user.uid));
 
       toast({ 
         title: "Access Granted", 
-        description: "Credentials verified. Accessing system..." 
+        description: `Logged in as ${user.email}` 
       });
       
-      if (adminDoc.exists()) {
+      if (isAdmin) {
         router.push("/admin");
       } else if (judgeDoc.exists()) {
         router.push("/judge");
@@ -70,7 +75,10 @@ export default function LoginPage() {
     setIsResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ title: "Email Sent", description: "Password reset instructions have been sent to your email." });
+      toast({ 
+        title: "Email Dispatched", 
+        description: "Check your inbox for password reset instructions. Ensure your Firebase Project has email templates enabled." 
+      });
       setIsResetOpen(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed", description: error.message });
@@ -136,7 +144,7 @@ export default function LoginPage() {
                 <DialogContent className="bg-card border-border">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
-                    <CardDescription>Enter your email to receive a secure reset code.</CardDescription>
+                    <CardDescription>Enter your email to receive a secure reset link via Firebase Auth.</CardDescription>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">

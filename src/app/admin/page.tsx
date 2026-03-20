@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Edit2, Zap, Users, ShieldAlert, Loader2, Trophy, AlertTriangle, UserPlus, KeyRound } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -26,14 +27,14 @@ export default function AdminPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const adminDocRef = useMemoFirebase(() => user ? doc(db, "roles_admin", user.uid) : null, [db, user]);
-  const { data: adminRole, isLoading: isAdminChecking } = useDoc(adminDocRef);
+  const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
-  const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
+  const { data: entries } = useCollection(entriesQuery);
 
   const judgesQuery = useMemoFirebase(() => collection(db, "roles_judge"), [db]);
-  const { data: judges, isLoading: isJudgesLoading } = useCollection(judgesQuery);
+  const { data: judges } = useCollection(judgesQuery);
 
   const [isAdding, setIsAdding] = useState(false);
   const [isAddingJudge, setIsAddingJudge] = useState(false);
@@ -64,7 +65,7 @@ export default function AdminPage() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || isAdminChecking) {
+  if (isUserLoading) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-12 h-12 text-accent animate-spin" />
@@ -73,14 +74,14 @@ export default function AdminPage() {
     );
   }
 
-  if (!adminRole) {
+  if (!isAdmin) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
         <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant administrative privileges.</p>
+        <p className="text-muted-foreground max-w-md mb-8">Admin privileges required. Contact sys-admin.</p>
         <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20">
           Go to Login
         </Button>
@@ -95,7 +96,7 @@ export default function AdminPage() {
       await sendPasswordResetEmail(auth, user.email);
       toast({ 
         title: "Security Link Sent", 
-        description: `A password reset link has been dispatched to ${user.email}.` 
+        description: `Check your inbox at ${user.email} for reset instructions.` 
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
@@ -131,18 +132,9 @@ export default function AdminPage() {
         role: "judge"
       });
 
-      await setDoc(doc(db, "users", judgeUid), {
-        id: judgeUid,
-        externalAuthId: judgeUid,
-        email: newJudge.email,
-        username: newJudge.username,
-        name: newJudge.name,
-        role: "judge"
-      });
-
       toast({ 
-        title: "Judge Created", 
-        description: `Account initialized. Credentials: ${newJudge.email} / ${automatedPassword}` 
+        title: "Judge Account Ready", 
+        description: `Credentials: ${newJudge.email} / ${automatedPassword}. Note: Ensure Firebase templates are active.` 
       });
       
       setNewJudge({ name: "", username: "", email: "" });
@@ -171,6 +163,7 @@ export default function AdminPage() {
           const data = doc.data();
           if (data.scores) {
             const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
+            // 30/30/30/10 weighted logic
             const weightedAvg = (mastery * 0.3) + (innovation * 0.3) + (impact * 0.3) + (compliance * 0.1);
             totalWeightedScore += weightedAvg;
             submissionCount++;
@@ -190,8 +183,7 @@ export default function AdminPage() {
       setRankedResults(sorted);
       setProcessingStatus("READY");
     } catch (error) {
-      console.error(error);
-      toast({ variant: "destructive", title: "Process Failed", description: "Could not aggregate scores." });
+      toast({ variant: "destructive", title: "Process Failed", description: "Check Firestore connection." });
       setProcessingStatus("IDLE");
     }
   };
@@ -207,7 +199,7 @@ export default function AdminPage() {
 
     setIsProcessing(false);
     setProcessingStatus("IDLE");
-    toast({ title: "Leaderboard Published", description: "Top 10 ranks updated based on weighted scores." });
+    toast({ title: "Leaderboard Published", description: "Top 10 ranks synced to Public Board." });
   };
 
   const handleSaveEntry = () => {
@@ -223,12 +215,12 @@ export default function AdminPage() {
     });
 
     setIsAdding(false);
-    toast({ title: "Entry Uploaded", description: `${newEntry.teamName} has been deployed.` });
+    toast({ title: "Entry Deployed", description: `${newEntry.teamName} is now live.` });
   };
 
   const handleDeleteEntry = (id: string) => {
     deleteDocumentNonBlocking(doc(db, "entries", id));
-    toast({ title: "Entry Removed", description: "Mission decommissioned." });
+    toast({ title: "Entry Scrubbed", description: "Record removed from database." });
   };
 
   const handleUpdateRank = (id: string, rank: string) => {
@@ -250,43 +242,43 @@ export default function AdminPage() {
               className="border-white/10 text-muted-foreground hover:text-accent h-8 text-[10px] uppercase tracking-widest"
             >
               {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3 mr-2" />}
-              Change My Password
+              Reset My Password
             </Button>
           </div>
-          <p className="text-muted-foreground uppercase text-xs tracking-widest">Managing hackathon assets</p>
+          <p className="text-muted-foreground uppercase text-xs tracking-widest">Admin Control Panel</p>
         </div>
         
         <div className="flex flex-wrap gap-4">
           <Dialog open={isAddingJudge} onOpenChange={setIsAddingJudge}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest">
-                <UserPlus className="w-4 h-4 mr-2" /> Add Judge
+                <UserPlus className="w-4 h-4 mr-2" /> Register Judge
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold uppercase italic">Register New Judge</DialogTitle>
+                <DialogTitle className="text-2xl font-bold uppercase italic">New Judge Protocol</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Judge Name</label>
-                  <Input placeholder="e.g. John Doe" value={newJudge.name} onChange={e => setNewJudge({...newJudge, name: e.target.value})} />
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Full Name</label>
+                  <Input placeholder="Judge Name" value={newJudge.name} onChange={e => setNewJudge({...newJudge, name: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Username</label>
-                  <Input placeholder="johndoe123" value={newJudge.username} onChange={e => setNewJudge({...newJudge, username: e.target.value})} />
+                  <Input placeholder="handle" value={newJudge.username} onChange={e => setNewJudge({...newJudge, username: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Email Address</label>
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Email</label>
                   <Input type="email" placeholder="judge@email.com" value={newJudge.email} onChange={e => setNewJudge({...newJudge, email: e.target.value})} />
                 </div>
                 <div className="bg-white/5 p-3 rounded text-[10px] text-muted-foreground italic">
-                  Password will be automatically generated as: BT_{newJudge.name.replace(/\s+/g, '') || "Name"}
+                  Password: BT_{newJudge.name.replace(/\s+/g, '') || "Name"}
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setIsAddingJudge(false)} className="uppercase text-xs">Cancel</Button>
-                <Button className="bg-accent uppercase text-xs font-bold" onClick={handleCreateJudge}>Create Account</Button>
+                <Button className="bg-accent uppercase text-xs font-bold" onClick={handleCreateJudge}>Authorize Judge</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -323,8 +315,7 @@ export default function AdminPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Google Drive Video Link</label>
-                  <Input placeholder="https://drive.google.com/file/d/.../view" value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
-                  <p className="text-[9px] text-muted-foreground italic">Standard sharing links will be automatically converted to embed format.</p>
+                  <Input placeholder="https://drive.google.com/..." value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Thumbnail Image URL</label>
@@ -345,18 +336,18 @@ export default function AdminPage() {
           <Dialog open={isProcessing} onOpenChange={setIsProcessing}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest">
-                <Zap className="w-4 h-4 mr-2" /> Process Leaderboard
+                <Zap className="w-4 h-4 mr-2" /> Leaderboard Engine
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold uppercase italic">Leaderboard Processor</DialogTitle>
+                <DialogTitle className="text-2xl font-bold uppercase italic">Calculate Standings</DialogTitle>
               </DialogHeader>
               <div className="py-6">
                 {processingStatus === "IDLE" && (
                   <div className="text-center py-12">
                     <Trophy className="w-12 h-12 text-accent/20 mx-auto mb-4" />
-                    <Button onClick={handleProcessLeaderboard} className="bg-accent uppercase font-bold">Start Calculation</Button>
+                    <Button onClick={handleProcessLeaderboard} className="bg-accent uppercase font-bold">Process Weighted Scores</Button>
                   </div>
                 )}
                 {processingStatus === "CALCULATING" && (
@@ -366,20 +357,20 @@ export default function AdminPage() {
                 )}
                 {processingStatus === "READY" && (
                   <div className="space-y-6">
-                    <div className="glass-card rounded-lg overflow-hidden border-white/10">
+                    <div className="glass-card rounded-lg overflow-hidden border-white/10 max-h-80 overflow-y-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Rank</TableHead>
                             <TableHead>Team</TableHead>
-                            <TableHead>Weighted Score</TableHead>
+                            <TableHead>Avg Weighted</TableHead>
                             <TableHead>Evals</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {rankedResults.slice(0, 10).map((res, i) => (
                             <TableRow key={res.id}>
-                              <TableCell className="font-bold">#{i+1}</TableCell>
+                              <TableCell className="font-bold text-accent">#{i+1}</TableCell>
                               <TableCell>{res.teamName}</TableCell>
                               <TableCell>{res.avgScore}</TableCell>
                               <TableCell>{res.submissionCount}</TableCell>
@@ -388,7 +379,7 @@ export default function AdminPage() {
                         </TableBody>
                       </Table>
                     </div>
-                    <Button onClick={handleApplyRanks} className="w-full bg-accent uppercase font-bold">Publish Ranks</Button>
+                    <Button onClick={handleApplyRanks} className="w-full bg-accent uppercase font-bold">Publish to Global Leaderboard</Button>
                   </div>
                 )}
               </div>
@@ -400,15 +391,15 @@ export default function AdminPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
         <div className="xl:col-span-2 glass-card rounded-xl overflow-hidden">
           <div className="p-4 border-b border-white/10 bg-white/5">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Active Entries</h2>
+            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Active Missions</h2>
           </div>
           <Table>
             <TableHeader className="bg-white/5">
               <TableRow>
                 <TableHead>Team</TableHead>
                 <TableHead>Challenge</TableHead>
-                <TableHead>Rank</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Current Rank</TableHead>
+                <TableHead className="text-right">Manage</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -445,7 +436,7 @@ export default function AdminPage() {
 
         <div className="glass-card rounded-xl overflow-hidden h-fit">
           <div className="p-4 border-b border-white/10 bg-white/5">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Judges Panel</h2>
+            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Authorized Judges</h2>
           </div>
           <div className="p-4 space-y-4">
             {judges?.map((judge) => (
@@ -457,9 +448,6 @@ export default function AdminPage() {
                 <Badge className="bg-accent/20 text-accent border-accent/20 text-[9px]">{judge.email}</Badge>
               </div>
             ))}
-            {(!judges || judges.length === 0) && (
-              <p className="text-center text-xs text-muted-foreground italic py-8">No judges registered.</p>
-            )}
           </div>
         </div>
       </div>
