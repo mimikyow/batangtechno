@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -97,7 +96,6 @@ export default function AdminPage() {
     const automatedPassword = `BT_${newJudge.name.replace(/\s+/g, '')}`;
     
     try {
-      // Create secondary app to avoid logging out the current admin
       const secondaryApp = !getApps().find(app => app.name === 'secondary') 
         ? initializeApp(firebaseConfig, 'secondary')
         : getApp('secondary');
@@ -107,7 +105,6 @@ export default function AdminPage() {
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newJudge.email, automatedPassword);
       const judgeUid = userCredential.user.uid;
 
-      // Save to Firestore
       await setDoc(doc(db, "roles_judge", judgeUid), {
         id: judgeUid,
         externalAuthId: judgeUid,
@@ -306,8 +303,13 @@ export default function AdminPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Video URL</label>
-                  <Input placeholder="Embed URL" value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Google Drive Video Link</label>
+                  <Input placeholder="https://drive.google.com/file/d/.../view" value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
+                  <p className="text-[9px] text-muted-foreground italic">Standard sharing links will be automatically converted to embed format.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Thumbnail Image URL</label>
+                  <Input placeholder="https://..." value={newEntry.thumbnailImageUrl} onChange={e => setNewEntry({...newEntry, thumbnailImageUrl: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Description</label>

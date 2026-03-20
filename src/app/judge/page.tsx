@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
 import { doc, collection } from "firebase/firestore";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { getGoogleDriveEmbedUrl } from "@/lib/utils";
 
 export default function JudgePage() {
   const { user, isUserLoading } = useUser();
@@ -84,6 +84,8 @@ export default function JudgePage() {
     setScores({ innovation: 5, impact: 5, technical: 5, presentation: 5, comment: "" });
   };
 
+  const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row gap-8">
@@ -127,7 +129,7 @@ export default function JudgePage() {
                      <iframe
                         width="100%"
                         height="100%"
-                        src={selectedEntry.googleDriveVideoLink}
+                        src={selectedEmbedUrl}
                         title="Pitch Video"
                         allowFullScreen
                       ></iframe>

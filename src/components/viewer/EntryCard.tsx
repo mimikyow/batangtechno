@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -6,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { PlayCircle, Users, School, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getGoogleDriveEmbedUrl } from "@/lib/utils";
 
 interface EntryCardProps {
   entry: {
@@ -22,19 +22,37 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry }: EntryCardProps) {
+  const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
+
   return (
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full">
-      <div className="relative aspect-video overflow-hidden">
+      <div className="relative aspect-video overflow-hidden bg-black/20">
+        {/* Main Thumbnail Image */}
         <Image 
           src={entry.thumbnailImageUrl || "https://picsum.photos/seed/default/800/600"} 
           alt={entry.teamName} 
           fill 
           className="object-cover transition-transform group-hover:scale-105" 
+          data-ai-hint="project thumbnail"
         />
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        
+        {/* Logo Overlay in the center of the thumbnail */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative w-16 h-16 opacity-80 group-hover:opacity-100 transition-opacity">
+            <Image 
+              src="https://picsum.photos/seed/logo/400/400"
+              alt="Logo Overlay"
+              fill
+              className="object-contain drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
+              data-ai-hint="hackathon logo"
+            />
+          </div>
+        </div>
+
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="icon" variant="ghost" className="rounded-full w-16 h-16 bg-accent/20 backdrop-blur-sm border border-accent/40 hover:bg-accent/40">
+              <Button size="icon" variant="ghost" className="rounded-full w-16 h-16 bg-accent/20 backdrop-blur-sm border border-accent/40 hover:bg-accent/40 pointer-events-auto">
                 <PlayCircle className="w-10 h-10 text-white" />
               </Button>
             </DialogTrigger>
@@ -43,7 +61,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                 <iframe
                   width="100%"
                   height="100%"
-                  src={entry.googleDriveVideoLink}
+                  src={embedUrl}
                   title={`${entry.teamName} Pitch`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -52,7 +70,7 @@ export function EntryCard({ entry }: EntryCardProps) {
             </DialogContent>
           </Dialog>
         </div>
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 z-20">
           {entry.finalRank && (
             <Badge className="bg-accent text-white border-none shadow-glow">
               Rank #{entry.finalRank}
@@ -107,16 +125,16 @@ export function EntryCard({ entry }: EntryCardProps) {
                 Project Details
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-card border-border">
+            <DialogContent className="max-w-2xl bg-card border-border overflow-y-auto max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-white">{entry.teamName}</DialogTitle>
               </DialogHeader>
               <div className="space-y-6">
-                <div className="aspect-video relative rounded-lg overflow-hidden">
+                <div className="aspect-video relative rounded-lg overflow-hidden border border-white/10 bg-black">
                    <iframe
                     width="100%"
                     height="100%"
-                    src={entry.googleDriveVideoLink}
+                    src={embedUrl}
                     title={`${entry.teamName} Pitch`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -131,7 +149,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                   <p className="text-muted-foreground text-sm leading-relaxed">{entry.projectDescription}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-accent uppercase tracking-widest mb-2">Team Stellar</h4>
+                  <h4 className="text-sm font-semibold text-accent uppercase tracking-widest mb-2">Team Members</h4>
                   <div className="flex flex-wrap gap-2">
                     {entry.projectMembers?.map((m, i) => (
                       <Badge key={i} variant="secondary" className="flex gap-2 items-center">
