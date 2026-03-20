@@ -248,10 +248,11 @@ export default function AdminPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="NONE">Unranked</SelectItem>
-                          <SelectItem value="1">1st Place</SelectItem>
-                          <SelectItem value="2">2nd Place</SelectItem>
-                          <SelectItem value="3">3rd Place</SelectItem>
-                          <SelectItem value="4">Top 10</SelectItem>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(rank => (
+                            <SelectItem key={rank} value={rank.toString()}>
+                              {rank === 1 ? "1st Place" : rank === 2 ? "2nd Place" : rank === 3 ? "3rd Place" : `Rank ${rank}`}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

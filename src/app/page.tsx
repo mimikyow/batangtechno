@@ -5,10 +5,9 @@ import { TopThree } from "@/components/viewer/TopThree";
 import { EntryCard } from "@/components/viewer/EntryCard";
 import { CHALLENGES } from "@/lib/constants";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter, Loader2, Trophy, Rocket } from "lucide-react";
+import { Search, Filter, Loader2, Trophy, Rocket, Star } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import Image from "next/image";
@@ -18,7 +17,7 @@ export default function Home() {
   const [filter, setFilter] = useState("ALL");
   const db = useFirestore();
 
-  // Query to filter for adminApproved entries as required by security rules
+  // Query for all approved entries
   const entriesQuery = useMemoFirebase(() => {
     return query(collection(db, "entries"), where("adminApproved", "==", true));
   }, [db]);
@@ -32,6 +31,10 @@ export default function Home() {
     return matchesSearch && matchesFilter;
   });
 
+  // Finalists: Top 10 (Rank 1-10)
+  const finalists = (entries || []).filter(e => e.finalRank && e.finalRank <= 10).sort((a, b) => (a.finalRank || 0) - (b.finalRank || 0));
+  
+  // Winners: Top 3 (Rank 1-3)
   const winners = (entries || []).filter(e => e.finalRank && e.finalRank <= 3);
 
   return (
@@ -74,18 +77,21 @@ export default function Home() {
               <p className="text-muted-foreground">Explore the constellation of innovation</p>
             </div>
             
-            <TabsList className="bg-white/5 border border-white/10 p-1 h-12">
+            <TabsList className="bg-white/5 border border-white/10 p-1 h-12 flex-wrap">
               <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-6">
                 <Rocket className="w-4 h-4" /> All Missions
               </TabsTrigger>
+              <TabsTrigger value="finalists" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white gap-2 px-6">
+                <Star className="w-4 h-4" /> Stellar Finalists
+              </TabsTrigger>
               <TabsTrigger value="winners" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white gap-2 px-6">
-                <Trophy className="w-4 h-4" /> Hall of Fame
+                <Trophy className="w-4 h-4" /> Final Frontiers
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="all" className="mt-0">
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <TabsContent value="all" className="mt-0 space-y-8">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input 
@@ -134,6 +140,35 @@ export default function Home() {
             )}
           </TabsContent>
 
+          <TabsContent value="finalists" className="mt-0">
+            {isLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-10 h-10 text-accent animate-spin" />
+                <p className="text-muted-foreground uppercase text-xs tracking-widest">Tracking Finalists...</p>
+              </div>
+            ) : finalists.length > 0 ? (
+              <div className="space-y-8">
+                <div className="text-center py-8">
+                  <h3 className="text-3xl font-black italic text-white glow-accent uppercase tracking-tighter">Stellar Finalists</h3>
+                  <p className="text-muted-foreground">The top performing missions of the cycle</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {finalists.map(entry => (
+                    <EntryCard key={entry.id} entry={entry as any} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="py-20 text-center glass-card rounded-2xl border-dashed">
+                <Star className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Finalists Not Selected</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto italic">
+                  Selection of finalists is in progress. Check back soon.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="winners" className="mt-0">
             {isLoading ? (
               <div className="py-20 flex flex-col items-center justify-center gap-4">
@@ -145,9 +180,9 @@ export default function Home() {
             ) : (
               <div className="py-20 text-center glass-card rounded-2xl border-dashed">
                 <Trophy className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Winners Not Yet Announced</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Final Frontiers Awaiting</h3>
                 <p className="text-muted-foreground max-w-xs mx-auto italic">
-                  The Command Center is currently reviewing stellar evaluations. Check back soon for the final rankings.
+                  The Command Center is finalizing the ultimate rankings. The winners will be revealed here.
                 </p>
               </div>
             )}
