@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -61,13 +61,15 @@ export default function AdminPage() {
 
   const [newEntry, setNewEntry] = useState({
     teamName: "",
-    projectSchool: "",
-    schoolLogoUrl: "",
     projectDescription: "",
     challengeId: CHALLENGES[0],
     googleDriveVideoLink: "",
     thumbnailImageUrl: "",
-    projectMembers: ["", "", ""]
+    projectMembers: [
+      { name: "", school: "", schoolLogoUrl: "" },
+      { name: "", school: "", schoolLogoUrl: "" },
+      { name: "", school: "", schoolLogoUrl: "" }
+    ]
   });
 
   const [newJudge, setNewJudge] = useState({
@@ -186,7 +188,6 @@ export default function AdminPage() {
         results.push({
           id: entry.id,
           teamName: entry.teamName,
-          school: entry.projectSchool,
           avgScore: submissionCount > 0 ? (totalWeightedScore / submissionCount).toFixed(2) : "0.00",
           submissionCount
         });
@@ -216,8 +217,8 @@ export default function AdminPage() {
   };
 
   const handleSaveEntry = () => {
-    if (!newEntry.teamName || !newEntry.projectSchool) {
-      toast({ variant: "destructive", title: "Missing Fields" });
+    if (!newEntry.teamName || newEntry.projectMembers.some(m => !m.name || !m.school)) {
+      toast({ variant: "destructive", title: "Missing Fields", description: "All members must have a name and school." });
       return;
     }
     
@@ -230,13 +231,15 @@ export default function AdminPage() {
     setIsAdding(false);
     setNewEntry({
       teamName: "",
-      projectSchool: "",
-      schoolLogoUrl: "",
       projectDescription: "",
       challengeId: CHALLENGES[0],
       googleDriveVideoLink: "",
       thumbnailImageUrl: "",
-      projectMembers: ["", "", ""]
+      projectMembers: [
+        { name: "", school: "", schoolLogoUrl: "" },
+        { name: "", school: "", schoolLogoUrl: "" },
+        { name: "", school: "", schoolLogoUrl: "" }
+      ]
     });
     toast({ title: "Entry Deployed" });
   };
@@ -249,6 +252,30 @@ export default function AdminPage() {
   const handleUpdateRank = (id: string, rank: string) => {
     const rankNum = rank === "NONE" ? null : parseInt(rank);
     updateDocumentNonBlocking(doc(db, "entries", id), { finalRank: rankNum });
+  };
+
+  const addMemberField = () => {
+    if (newEntry.projectMembers.length < 5) {
+      setNewEntry({
+        ...newEntry,
+        projectMembers: [...newEntry.projectMembers, { name: "", school: "", schoolLogoUrl: "" }]
+      });
+    }
+  };
+
+  const removeMemberField = (index: number) => {
+    if (newEntry.projectMembers.length > 3) {
+      const updatedMembers = newEntry.projectMembers.filter((_, i) => i !== index);
+      setNewEntry({ ...newEntry, projectMembers: updatedMembers });
+    }
+  };
+
+  const updateMember = (index: number, field: string, value: string) => {
+    const updatedMembers = newEntry.projectMembers.map((m, i) => {
+      if (i === index) return { ...m, [field]: value };
+      return m;
+    });
+    setNewEntry({ ...newEntry, projectMembers: updatedMembers });
   };
 
   return (
@@ -309,25 +336,61 @@ export default function AdminPage() {
                 <Plus className="w-4 h-4 mr-2" /> New Entry
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-card border-border overflow-y-auto max-h-[90vh]">
+            <DialogContent className="max-w-3xl bg-card border-border overflow-y-auto max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold uppercase italic">Deploy New Entry</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Team Name</label>
-                    <Input placeholder="" value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase text-accent tracking-widest">School</label>
-                    <Input placeholder="" value={newEntry.projectSchool} onChange={e => setNewEntry({...newEntry, projectSchool: e.target.value})} />
-                  </div>
-                </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">School Logo URL</label>
-                  <Input placeholder="" value={newEntry.schoolLogoUrl} onChange={e => setNewEntry({...newEntry, schoolLogoUrl: e.target.value})} />
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Team Name</label>
+                  <Input placeholder="" value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} />
                 </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Team Members (3-5)</label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addMemberField}
+                      disabled={newEntry.projectMembers.length >= 5}
+                      className="h-7 text-[10px] uppercase tracking-tighter"
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Add Member
+                    </Button>
+                  </div>
+                  
+                  {newEntry.projectMembers.map((member, idx) => (
+                    <div key={idx} className="p-4 bg-white/5 rounded-lg border border-white/10 space-y-3 relative">
+                      {newEntry.projectMembers.length > 3 && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute top-2 right-2 h-6 w-6 text-destructive" 
+                          onClick={() => removeMemberField(idx)}
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase text-muted-foreground">Name</label>
+                          <Input className="h-8 text-sm" value={member.name} onChange={e => updateMember(idx, 'name', e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase text-muted-foreground">School</label>
+                          <Input className="h-8 text-sm" value={member.school} onChange={e => updateMember(idx, 'school', e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase text-muted-foreground">School Logo URL</label>
+                        <Input className="h-8 text-sm" value={member.schoolLogoUrl} onChange={e => updateMember(idx, 'schoolLogoUrl', e.target.value)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Challenge</label>
                   <Select value={newEntry.challengeId} onValueChange={(val: any) => setNewEntry({...newEntry, challengeId: val})}>
@@ -432,7 +495,9 @@ export default function AdminPage() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-bold text-white">{entry.teamName}</span>
-                      <span className="text-[10px] text-muted-foreground uppercase">{entry.projectSchool}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase">
+                        {entry.projectMembers?.length > 0 ? entry.projectMembers[0].school : "No School"}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>

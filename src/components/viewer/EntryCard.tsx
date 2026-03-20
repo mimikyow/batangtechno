@@ -9,17 +9,21 @@ import { Badge } from "@/components/ui/badge";
 import { getGoogleDriveEmbedUrl, getGoogleDriveImageUrl } from "@/lib/utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 
+interface ProjectMember {
+  name: string;
+  school: string;
+  schoolLogoUrl?: string;
+}
+
 interface EntryCardProps {
   entry: {
     id: string;
     teamName: string;
-    projectSchool: string;
-    schoolLogoUrl?: string;
     projectDescription: string;
     googleDriveVideoLink: string;
     thumbnailImageUrl: string;
     challengeId: string;
-    projectMembers: string[];
+    projectMembers: ProjectMember[];
     finalRank?: number;
   };
 }
@@ -27,8 +31,11 @@ interface EntryCardProps {
 export function EntryCard({ entry }: EntryCardProps) {
   const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
   const imageUrl = getGoogleDriveImageUrl(entry.thumbnailImageUrl) || "https://picsum.photos/seed/default/800/600";
-  const schoolLogoUrl = getGoogleDriveImageUrl(entry.schoolLogoUrl || "");
   const logo = getPlaceholderImage("hero-logo");
+
+  // Representative school from the first member
+  const leadSchool = entry.projectMembers?.[0]?.school || "Multiple Schools";
+  const leadSchoolLogo = entry.projectMembers?.[0]?.schoolLogoUrl ? getGoogleDriveImageUrl(entry.projectMembers[0].schoolLogoUrl) : null;
 
   return (
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full rounded-xl">
@@ -95,7 +102,7 @@ export function EntryCard({ entry }: EntryCardProps) {
         <div className="flex flex-col gap-1.5 mb-4 text-xs text-muted-foreground uppercase tracking-widest">
           <div className="flex items-center gap-2">
             <School className="w-3.5 h-3.5 text-accent" />
-            {entry.projectSchool}
+            <span className="truncate">{leadSchool}</span>
           </div>
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-accent" />
@@ -109,10 +116,10 @@ export function EntryCard({ entry }: EntryCardProps) {
 
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
           <div className="relative w-8 h-8">
-            {schoolLogoUrl ? (
+            {leadSchoolLogo ? (
               <Image 
-                src={schoolLogoUrl} 
-                alt={`${entry.projectSchool} Logo`} 
+                src={leadSchoolLogo} 
+                alt={`${leadSchool} Logo`} 
                 fill 
                 className="object-contain" 
               />
@@ -154,12 +161,23 @@ export function EntryCard({ entry }: EntryCardProps) {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-accent uppercase tracking-widest mb-2">Team Members</h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {entry.projectMembers?.map((m, i) => (
-                      <Badge key={i} variant="secondary" className="flex gap-2 items-center">
-                        <Users className="w-3 h-3" />
-                        {m}
-                      </Badge>
+                      <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                        <div className="w-10 h-10 relative flex-shrink-0">
+                          {m.schoolLogoUrl ? (
+                            <Image src={getGoogleDriveImageUrl(m.schoolLogoUrl)} alt={m.school} fill className="object-contain" />
+                          ) : (
+                            <div className="w-full h-full bg-accent/20 rounded flex items-center justify-center">
+                              <School className="w-5 h-5 text-accent" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="overflow-hidden">
+                          <div className="text-sm font-bold text-white truncate">{m.name}</div>
+                          <div className="text-[10px] text-muted-foreground uppercase truncate">{m.school}</div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
