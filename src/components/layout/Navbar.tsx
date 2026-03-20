@@ -2,9 +2,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Rocket, ShieldCheck, Telescope, Menu, LogOut } from "lucide-react";
+import { ShieldCheck, Telescope, Menu, LogOut, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
@@ -45,8 +46,14 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/60 backdrop-blur-lg">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,153,255,0.4)] transition-all group-hover:scale-110">
-            <Rocket className="text-accent w-6 h-6" />
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,153,255,0.4)] transition-all group-hover:scale-110 overflow-hidden">
+            <Image 
+              src="/logo.png" 
+              alt="Batang Techno Logo" 
+              width={40} 
+              height={40} 
+              className="object-contain"
+            />
           </div>
           <span className="font-bold text-xl tracking-tight glow-accent text-white uppercase italic">
             Batang <span className="text-accent">Techno</span>
