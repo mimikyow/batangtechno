@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -39,19 +38,29 @@ export default function LoginPage() {
       // 1. Check if user is the environment-defined Admin
       const isAdmin = user.email === ADMIN_EMAIL;
       
+      // Auto-provision admin doc if matching ENV email
+      if (isAdmin) {
+        await setDoc(doc(db, "roles_admin", user.uid), {
+          id: user.uid,
+          externalAuthId: user.uid,
+          email: user.email,
+          name: "System Admin",
+          role: "admin"
+        }, { merge: true });
+        
+        toast({ title: "Command Access Authorized", description: `Logged in as Primary Admin` });
+        router.push("/admin");
+        return;
+      }
+      
       // 2. Check if user is a Judge in Firestore
       const judgeDoc = await getDoc(doc(db, "roles_judge", user.uid));
 
-      toast({ 
-        title: "Access Granted", 
-        description: `Logged in as ${user.email}` 
-      });
-      
-      if (isAdmin) {
-        router.push("/admin");
-      } else if (judgeDoc.exists()) {
+      if (judgeDoc.exists()) {
+        toast({ title: "Judge Session Initiated", description: `Logged in as ${judgeDoc.data().name}` });
         router.push("/judge");
       } else {
+        toast({ title: "Access Granted", description: "Standard Viewer Session" });
         router.push("/");
       }
 

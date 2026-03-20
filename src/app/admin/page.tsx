@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,7 +12,7 @@ import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound } f
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, getDocs, setDoc } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { initializeApp, getApp, getApps } from "firebase/app";
@@ -29,6 +28,23 @@ export default function AdminPage() {
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
   const isAdmin = user?.email === ADMIN_EMAIL;
+
+  // Auto-provision admin document if the user matches the ENV email but doesn't have a doc yet
+  useEffect(() => {
+    if (user && isAdmin) {
+      const provisionAdmin = async () => {
+        const adminRef = doc(db, "roles_admin", user.uid);
+        await setDoc(adminRef, {
+          id: user.uid,
+          externalAuthId: user.uid,
+          email: user.email,
+          name: user.displayName || "System Admin",
+          role: "admin"
+        }, { merge: true });
+      };
+      provisionAdmin();
+    }
+  }, [user, isAdmin, db]);
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
   const { data: entries } = useCollection(entriesQuery);

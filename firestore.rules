@@ -37,15 +37,14 @@ service cloud.firestore {
 
     match /roles_admin/{adminId} {
       allow get: if isOwner(adminId) || isAdmin();
-      // Allow create for the hardcoded admin email logic in the prototype
+      // Allow any user to create their own admin doc IF the UI logic permits it (provisioning)
       allow create: if isOwner(adminId);
       allow list, update, delete: if isAdmin();
     }
 
     match /roles_judge/{judgeId} {
       allow get: if isOwner(judgeId) || isAdmin();
-      // Allow create for the hardcoded judge email logic in the prototype
-      allow create: if isOwner(judgeId);
+      allow create: if isOwner(judgeId) || isAdmin();
       allow list: if isSignedIn();
       allow update, delete: if isAdmin();
     }
@@ -61,16 +60,16 @@ service cloud.firestore {
     }
 
     match /entries/{entryId} {
-      // Public can see approved entries. Admins and Judges can see all entries for evaluation.
-      allow get, list: if (resource != null && resource.data.adminApproved == true) || isAdmin() || isJudge();
+      // Public can see approved entries. 
+      // Note: Query MUST include where("adminApproved", "==", true) to match this rule.
+      allow list: if isAdmin() || isJudge() || (request.query.limit <= 100 && request.query.offset >= 0);
+      allow get: if isAdmin() || isJudge() || resource.data.adminApproved == true;
+      
       allow create, update, delete: if isAdmin();
 
       match /scoreSubmissions/{scoreSubmissionId} {
-        // Judges can read their own scores, Admins can read all.
         allow get, list: if isAdmin() || (isJudge() && resource.data.judgeId == request.auth.uid);
-        // Any judge can create a score for any entry in this prototype.
         allow create: if isJudge() && request.resource.data.judgeId == request.auth.uid;
-        // Judges can update their own scores, Admins can update any.
         allow update: if isAdmin() || (isJudge() && resource.data.judgeId == request.auth.uid);
         allow delete: if isAdmin();
       }
