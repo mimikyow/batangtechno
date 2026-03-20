@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "project-1",
+      "description": "Smart Mobility App Thumbnail",
+      "imageUrl": "https://picsum.photos/seed/smart/800/600",
+      "imageHint": "technology mobility"
+    },
+    {
+      "id": "project-2",
+      "description": "Healthcare Platform Thumbnail",
+      "imageUrl": "https://picsum.photos/seed/health/800/600",
+      "imageHint": "medical app"
+    },
+    {
+      "id": "project-3",
+      "description": "Sustainable Agriculture Project",
+      "imageUrl": "https://picsum.photos/seed/farm/800/600",
+      "imageHint": "sustainable farming"
+    },
+    {
+      "id": "hero-bg",
+      "description": "Starry sky background",
+      "imageUrl": "https://picsum.photos/seed/space/1920/1080",
+      "imageHint": "stars nebula"
+    }
+  ]
+}
