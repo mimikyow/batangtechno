@@ -101,7 +101,7 @@ export default function JudgePage() {
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, user.email);
-      toast({ title: "Reset Link Dispatched" });
+      toast({ title: "Reset Link Sent" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Action Failed", description: error.message });
     } finally {

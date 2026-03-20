@@ -34,10 +34,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      if (user.email === ADMIN_EMAIL) {
+      if (user.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase()) {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           externalAuthId: user.uid,
@@ -80,7 +80,7 @@ export default function LoginPage() {
 
     setIsResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, resetEmail);
+      await sendPasswordResetEmail(auth, resetEmail.trim());
       toast({ title: "Reset Link Sent" });
       setIsResetOpen(false);
     } catch (error: any) {

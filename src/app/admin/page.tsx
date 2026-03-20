@@ -28,7 +28,7 @@ export default function AdminPage() {
   const { toast } = useToast();
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase();
 
   useEffect(() => {
     if (user && isAdmin) {

@@ -26,7 +26,7 @@ export function Navbar() {
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
   const { data: judgeRole } = useDoc(judgeDocRef);
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase();
   const isJudge = !!judgeRole;
 
   const handleLogout = async () => {
