@@ -1,4 +1,3 @@
-
 "use client";
 
 import { TopThree } from "@/components/viewer/TopThree";
@@ -16,7 +15,11 @@ export default function Home() {
   const [filter, setFilter] = useState("ALL");
   const db = useFirestore();
 
-  const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
+  // Updated query to filter for adminApproved entries as required by security rules
+  const entriesQuery = useMemoFirebase(() => {
+    return query(collection(db, "entries"), where("adminApproved", "==", true));
+  }, [db]);
+  
   const { data: entries, isLoading } = useCollection(entriesQuery);
 
   const filteredEntries = (entries || []).filter(entry => {
