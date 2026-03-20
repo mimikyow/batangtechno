@@ -87,7 +87,7 @@ export default function LoginPage() {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({ 
         title: "Security Link Dispatched", 
-        description: "Check your inbox (and spam folder) for instructions. Verify that custom domains are configured in Firebase Console." 
+        description: "Check your inbox (and spam folder) for instructions." 
       });
       setIsResetOpen(false);
     } catch (error: any) {

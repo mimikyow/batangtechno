@@ -112,7 +112,7 @@ export default function AdminPage() {
       await sendPasswordResetEmail(auth, user.email);
       toast({ 
         title: "Security Link Sent", 
-        description: `Check your inbox (and spam) at ${user.email}. Domain verification in Firebase Console helps prevent spam.` 
+        description: `Check your inbox (and spam) at ${user.email}.` 
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
