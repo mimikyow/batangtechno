@@ -41,7 +41,7 @@ export default function Home() {
         </div>
         
         <div className="relative z-20 max-w-4xl mx-auto animate-float">
-          <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter uppercase mb-6 glow-accent">
+          <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-6 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
           <p className="text-xl md:text-2xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
