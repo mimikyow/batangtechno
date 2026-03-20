@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlayCircle, Users, School, Globe, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 interface EntryCardProps {
   entry: {
@@ -23,11 +24,11 @@ interface EntryCardProps {
 
 export function EntryCard({ entry }: EntryCardProps) {
   const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
+  const logo = getPlaceholderImage("main-logo");
 
   return (
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full rounded-xl">
       <div className="relative aspect-video overflow-hidden bg-black/20">
-        {/* Main Thumbnail Image */}
         <Image 
           src={entry.thumbnailImageUrl || "https://picsum.photos/seed/default/800/600"} 
           alt={entry.teamName} 
@@ -36,18 +37,19 @@ export function EntryCard({ entry }: EntryCardProps) {
           data-ai-hint="project thumbnail"
         />
         
-        {/* Logo Overlay in the center of the thumbnail */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-12 h-12 md:w-16 md:h-16 opacity-70 group-hover:opacity-100 transition-opacity">
-            <Image 
-              src="https://picsum.photos/seed/logo/400/400"
-              alt="Logo Overlay"
-              fill
-              className="object-contain drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
-              data-ai-hint="hackathon logo"
-            />
+        {logo && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-12 h-12 md:w-16 md:h-16 opacity-70 group-hover:opacity-100 transition-opacity">
+              <Image 
+                src={logo.imageUrl}
+                alt={logo.description}
+                fill
+                className="object-contain drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
+                data-ai-hint={logo.imageHint}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <Dialog>

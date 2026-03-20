@@ -1,4 +1,3 @@
-
 "use client";
 
 import { TopThree } from "@/components/viewer/TopThree";
@@ -11,13 +10,15 @@ import { Search, Filter, Loader2, Trophy, Rocket, Star } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import Image from "next/image";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 export default function Home() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
   const db = useFirestore();
 
-  // Query for all approved entries
+  const logo = getPlaceholderImage("main-logo");
+
   const entriesQuery = useMemoFirebase(() => {
     return query(collection(db, "entries"), where("adminApproved", "==", true));
   }, [db]);
@@ -31,15 +32,11 @@ export default function Home() {
     return matchesSearch && matchesFilter;
   });
 
-  // Finalists: Top 10 (Rank 1-10)
   const finalists = (entries || []).filter(e => e.finalRank && e.finalRank <= 10).sort((a, b) => (a.finalRank || 0) - (b.finalRank || 0));
-  
-  // Winners: Top 3 (Rank 1-3)
   const winners = (entries || []).filter(e => e.finalRank && e.finalRank <= 3);
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
       <section className="relative h-[70vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background to-background z-10" />
@@ -49,16 +46,18 @@ export default function Home() {
         </div>
         
         <div className="relative z-20 max-w-4xl mx-auto animate-float flex flex-col items-center">
-          <div className="mb-8 relative w-40 h-40">
-            <Image 
-              src="https://picsum.photos/seed/logo/400/400"
-              alt="Batang Techno Logo"
-              width={160}
-              height={160}
-              className="object-contain"
-              data-ai-hint="hackathon logo"
-            />
-          </div>
+          {logo && (
+            <div className="mb-8 relative w-40 h-40">
+              <Image 
+                src={logo.imageUrl}
+                alt={logo.description}
+                width={160}
+                height={160}
+                className="object-contain"
+                data-ai-hint={logo.imageHint}
+              />
+            </div>
+          )}
           <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-6 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
@@ -68,7 +67,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Main Content with Tabs */}
       <section className="container mx-auto px-4 py-12">
         <Tabs defaultValue="all" className="w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">

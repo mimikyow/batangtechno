@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -11,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -19,9 +19,10 @@ export function Navbar() {
   const auth = useAuth();
   const db = useFirestore();
 
+  const logo = getPlaceholderImage("main-logo");
+
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
-  // Check roles via DBAC existence and ENV check
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
   const { data: judgeRole } = useDoc(judgeDocRef);
 
@@ -46,21 +47,22 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,153,255,0.4)] transition-all group-hover:scale-110 overflow-hidden">
-            <Image 
-              src="https://picsum.photos/seed/logo/400/400" 
-              alt="Logo" 
-              width={40} 
-              height={40} 
-              className="object-contain"
-              data-ai-hint="hackathon logo"
-            />
+            {logo && (
+              <Image 
+                src={logo.imageUrl} 
+                alt={logo.description} 
+                width={40} 
+                height={40} 
+                className="object-contain"
+                data-ai-hint={logo.imageHint}
+              />
+            )}
           </div>
           <span className="font-bold text-xl tracking-tight glow-accent text-white uppercase italic">
             CICS - SC Alangilan
           </span>
         </Link>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
           {visibleItems.map((item) => {
             const isActive = pathname === item.href;
@@ -87,7 +89,6 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile Nav */}
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
