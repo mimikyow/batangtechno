@@ -32,7 +32,7 @@ export default function LoginPage() {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       } catch (error: any) {
         // If user doesn't exist, create them for this prototype
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
           userCredential = await createUserWithEmailAndPassword(auth, email, password);
         } else {
           throw error;
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       const user = userCredential.user;
 
-      // Hardcoded Role Assignment logic
+      // Hardcoded Role Assignment logic based on email
       if (email === "admin@email.com") {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
@@ -58,7 +58,10 @@ export default function LoginPage() {
         });
       }
 
-      toast({ title: "Access Granted", description: `Welcome back, ${email === 'admin@email.com' ? 'Administrator' : email === 'judge@email.com' ? 'Judge' : 'User'}.` });
+      toast({ 
+        title: "Access Granted", 
+        description: `Welcome back, ${email === 'admin@email.com' ? 'Administrator' : email === 'judge@email.com' ? 'Judge' : 'User'}.` 
+      });
       
       // Redirect based on role
       if (email === "admin@email.com") router.push("/admin");
@@ -69,7 +72,7 @@ export default function LoginPage() {
       toast({ 
         variant: "destructive", 
         title: "Auth Failed", 
-        description: error.message || "Invalid credentials." 
+        description: error.message || "Invalid credentials. Password must be at least 6 characters." 
       });
     } finally {
       setIsLoading(false);
@@ -96,8 +99,9 @@ export default function LoginPage() {
           </CardDescription>
           <div className="bg-white/5 p-3 rounded-md text-[10px] text-muted-foreground text-left space-y-1">
             <p className="font-bold text-accent">PROTOTYPE CREDENTIALS:</p>
-            <p>Admin: admin@email.com / admin</p>
-            <p>Judge: judge@email.com / judge</p>
+            <p>Admin: admin@email.com / admin123</p>
+            <p>Judge: judge@email.com / judge123</p>
+            <p className="italic text-[9px] mt-1 opacity-70">*Passwords must be 6+ chars</p>
           </div>
         </CardHeader>
         <form onSubmit={handleAuth}>
