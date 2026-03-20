@@ -147,14 +147,16 @@ export default function AdminPage() {
         const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
         const snapshot = await getDocs(scoresRef);
         
-        let totalScore = 0;
+        let totalWeightedScore = 0;
         let submissionCount = 0;
         
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.scores) {
-            const avg = (data.scores.innovation + data.scores.impact + data.scores.technical + data.scores.presentation) / 4;
-            totalScore += avg;
+            const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
+            // Weighted calculation: 30% mastery, 30% innovation, 30% impact, 10% compliance
+            const weightedAvg = (mastery * 0.3) + (innovation * 0.3) + (impact * 0.3) + (compliance * 0.1);
+            totalWeightedScore += weightedAvg;
             submissionCount++;
           }
         });
@@ -163,7 +165,7 @@ export default function AdminPage() {
           id: entry.id,
           teamName: entry.teamName,
           school: entry.projectSchool,
-          avgScore: submissionCount > 0 ? (totalScore / submissionCount).toFixed(2) : 0,
+          avgScore: submissionCount > 0 ? (totalWeightedScore / submissionCount).toFixed(2) : "0.00",
           submissionCount
         });
       }
@@ -189,7 +191,7 @@ export default function AdminPage() {
 
     setIsProcessing(false);
     setProcessingStatus("IDLE");
-    toast({ title: "Leaderboard Published", description: "Top 10 ranks updated." });
+    toast({ title: "Leaderboard Published", description: "Top 10 ranks updated based on weighted scores." });
   };
 
   const handleAddMember = () => {
@@ -353,7 +355,8 @@ export default function AdminPage() {
                           <TableRow>
                             <TableHead>Rank</TableHead>
                             <TableHead>Team</TableHead>
-                            <TableHead>Score</TableHead>
+                            <TableHead>Weighted Score</TableHead>
+                            <TableHead>Evals</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -362,6 +365,7 @@ export default function AdminPage() {
                               <TableCell className="font-bold">#{i+1}</TableCell>
                               <TableCell>{res.teamName}</TableCell>
                               <TableCell>{res.avgScore}</TableCell>
+                              <TableCell>{res.submissionCount}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

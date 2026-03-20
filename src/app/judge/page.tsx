@@ -6,12 +6,39 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2 } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase";
 import { doc, collection } from "firebase/firestore";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
+
+const CRITERIA = [
+  { 
+    key: "mastery", 
+    label: "Mastery and Use of Software Concepts", 
+    weight: "30%", 
+    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution. Emphasis is placed on overall quality, efficiency, and appropriate use of available tools and resources." 
+  },
+  { 
+    key: "innovation", 
+    label: "Novelty and Innovation", 
+    weight: "30%", 
+    desc: "Assesses the originality of the project and the creativity behind its concept and implementation. This includes how the solution introduces new ideas, improves existing approaches, or applies technology in a unique and meaningful way." 
+  },
+  { 
+    key: "impact", 
+    label: "Real-world Impact and Viability", 
+    weight: "30%", 
+    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment. Consideration is given to feasibility, scalability, sustainability, and the overall benefit to users or communities." 
+  },
+  { 
+    key: "compliance", 
+    label: "Compliance to Rules and Restrictions", 
+    weight: "10%", 
+    desc: "Determines the extent to which the project follows all competition guidelines, technical constraints, ethical standards, and submission requirements. Failure to comply may result in point deductions or disqualification." 
+  },
+];
 
 export default function JudgePage() {
   const { user, isUserLoading } = useUser();
@@ -28,10 +55,10 @@ export default function JudgePage() {
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [scores, setScores] = useState({
+    mastery: 5,
     innovation: 5,
     impact: 5,
-    technical: 5,
-    presentation: 5,
+    compliance: 5,
     comment: ""
   });
 
@@ -81,7 +108,7 @@ export default function JudgePage() {
       description: `Evaluation for ${selectedEntry.teamName} has been transmitted to the Command Center.`
     });
     setSelectedEntry(null);
-    setScores({ innovation: 5, impact: 5, technical: 5, presentation: 5, comment: "" });
+    setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });
   };
 
   const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";
@@ -143,19 +170,20 @@ export default function JudgePage() {
                   </div>
                 </div>
 
-                <div className="w-full lg:w-96 glass-card p-8 rounded-2xl border-accent/30 shadow-glow">
-                  <h3 className="text-xl font-bold text-white mb-8 border-b border-white/10 pb-4">Evaluation Matrix</h3>
+                <div className="w-full lg:w-[450px] glass-card p-8 rounded-2xl border-accent/30 shadow-glow">
+                  <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+                    <h3 className="text-xl font-bold text-white">Evaluation Matrix</h3>
+                    <Scale className="w-5 h-5 text-accent/50" />
+                  </div>
                   
                   <div className="space-y-8">
-                    {[
-                      { key: "innovation", label: "Innovation & Creativity", desc: "How original is the idea?" },
-                      { key: "impact", label: "Potential Impact", desc: "Real world usefulness" },
-                      { key: "technical", label: "Technical Execution", desc: "Quality of the build" },
-                      { key: "presentation", label: "Presentation", desc: "Pitch clarity & quality" },
-                    ].map(crit => (
+                    {CRITERIA.map(crit => (
                       <div key={crit.key} className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <label className="text-sm font-bold text-white">{crit.label}</label>
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <label className="text-sm font-bold text-white leading-tight">{crit.label}</label>
+                            <Badge variant="outline" className="w-fit text-[9px] h-4 px-1 mt-1 border-accent/30 text-accent">{crit.weight} Weight</Badge>
+                          </div>
                           <span className="text-accent font-mono text-lg">{(scores as any)[crit.key]} / 10</span>
                         </div>
                         <Slider 
@@ -164,7 +192,7 @@ export default function JudgePage() {
                           value={[(scores as any)[crit.key]]} 
                           onValueChange={(val) => setScores({...scores, [crit.key]: val[0]})}
                         />
-                        <p className="text-[10px] text-muted-foreground italic">{crit.desc}</p>
+                        <p className="text-[10px] text-muted-foreground italic leading-relaxed">{crit.desc}</p>
                       </div>
                     ))}
 
@@ -172,13 +200,13 @@ export default function JudgePage() {
                       <label className="text-sm font-bold text-white">Judge's Final Thoughts</label>
                       <Textarea 
                         placeholder="Internal notes for committee..." 
-                        className="bg-black/20 border-white/10 h-24"
+                        className="bg-black/20 border-white/10 h-24 text-sm"
                         value={scores.comment}
                         onChange={e => setScores({...scores, comment: e.target.value})}
                       />
                     </div>
 
-                    <Button className="w-full bg-accent hover:bg-accent/80 py-6" onClick={handleSubmitScore}>
+                    <Button className="w-full bg-accent hover:bg-accent/80 py-6 text-white font-bold uppercase tracking-widest" onClick={handleSubmitScore}>
                       <CheckCircle className="w-5 h-5 mr-2" /> Submit Evaluation
                     </Button>
                   </div>
