@@ -6,16 +6,32 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Converts a standard Google Drive sharing link to an embeddable preview link.
- * Example: https://drive.google.com/file/d/12345/view -> https://drive.google.com/file/d/12345/preview
+ * Converts various Google Drive sharing links to an embeddable preview link.
+ * Handles:
+ * - https://drive.google.com/file/d/FILE_ID/view
+ * - https://drive.google.com/file/d/FILE_ID/edit
+ * - https://drive.google.com/open?id=FILE_ID
  */
 export function getGoogleDriveEmbedUrl(url: string): string {
   if (!url) return "";
   
-  // Extract the file ID using regex
-  const fileIdMatch = url.match(/\/d\/([^/]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+  let fileId = "";
+  
+  // Pattern 1: /d/FILE_ID/
+  const dMatch = url.match(/\/d\/([^/?#]+)/);
+  if (dMatch && dMatch[1]) {
+    fileId = dMatch[1];
+  } 
+  // Pattern 2: ?id=FILE_ID
+  else {
+    const idMatch = url.match(/[?&]id=([^&/?#]+)/);
+    if (idMatch && idMatch[1]) {
+      fileId = idMatch[1];
+    }
+  }
+  
+  if (fileId) {
+    return `https://drive.google.com/file/d/${fileId}/preview`;
   }
   
   return url;

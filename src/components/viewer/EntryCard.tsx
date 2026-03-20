@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, Users, School, Globe } from "lucide-react";
+import { PlayCircle, Users, School, Globe, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ export function EntryCard({ entry }: EntryCardProps) {
   const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
 
   return (
-    <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full">
+    <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full rounded-xl">
       <div className="relative aspect-video overflow-hidden bg-black/20">
         {/* Main Thumbnail Image */}
         <Image 
@@ -38,7 +38,7 @@ export function EntryCard({ entry }: EntryCardProps) {
         
         {/* Logo Overlay in the center of the thumbnail */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-16 h-16 opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="relative w-12 h-12 md:w-16 md:h-16 opacity-70 group-hover:opacity-100 transition-opacity">
             <Image 
               src="https://picsum.photos/seed/logo/400/400"
               alt="Logo Overlay"
