@@ -28,7 +28,6 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +37,9 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const isAdminByEnv = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
-
-      if (isAdminByEnv || user.email === ADMIN_EMAIL) {
+      // Check if this user matches the Admin Email defined in environment variables
+      if (user.email === ADMIN_EMAIL) {
+        // Auto-provision admin role document if it doesn't exist
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           externalAuthId: user.uid,

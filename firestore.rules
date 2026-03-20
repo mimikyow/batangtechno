@@ -54,6 +54,7 @@ service cloud.firestore {
     }
 
     match /entries/{entryId} {
+      // Allow public listing and viewing of entries for default/viewer mode
       allow list, get: if true;
       allow create, update, delete: if isAdmin();
 

@@ -22,6 +22,7 @@ export function Navbar() {
 
   const logo = getPlaceholderImage("header-logo");
 
+  // Get Admin Email from env
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
@@ -55,7 +56,6 @@ export function Navbar() {
                 width={40} 
                 height={40} 
                 className="object-contain"
-                data-ai-hint={logo.imageHint}
               />
             )}
           </div>
