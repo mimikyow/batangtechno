@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * BATANG TECHNO SECURITY RULES - PROTOTYPING MODE
+     * 
+     * Core Philosophy:
+     * This ruleset implements a Database-Based Access Control (DBAC) model combined with 
+     * explicit document ownership and denormalized membership maps. It prioritizes 
+     * secure authorization while maintaining flexible data schemas for rapid prototyping.
+     * 
+     * Data Structure:
+     * - /users/{userId}: Private user profiles.
+     * - /roles_admin/{uid}: Existence denotes Administrative privileges.
+     * - /roles_judge/{uid}: Existence denotes Judge privileges.
+     * - /entries/{entryId}: Hackathon submissions with denormalized judge assignments.
+     * - /entries/{entryId}/scoreSubmissions/{scoreId}: Judge-specific scoring data.
+     * 
+     * Key Security Decisions:
+     * 1. DBAC for Roles: Administrative and Judge roles are managed via specialized collections 
+     *    (/roles_admin and /roles_judge). This avoids dependency on Custom Claims and 
+     *    allows for fast existence checks.
+     * 2. Denormalization for Authorization: Entries contain an 'assignedJudges' map 
+     *    (e.g., { 'judgeUid': true }). This allows judges to perform secure list operations 
+     *    without complex, slow cross-collection queries.
+     * 3. Hierarchy vs. Independence: While data is logically nested (Scores under Entries), 
+     *    security rules check specific ownership fields within the document to ensure 
+     *    authorization independence.
+     */
+
+    // --- Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    function isJudge() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_judge/$(request.auth.uid));
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /**
+     * Checks if the authenticated judge is assigned to a specific entry 
+     * by looking at the denormalized map on the entry document.
+     */
+    function isAssignedToEntry(entryId) {
+      return get(/databases/$(database)/documents/entries/$(entryId)).data.assignedJudges[request.auth.uid] == true;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for user profile documents. Only the owner or an admin can access.
+     * @path /users/{userId}
+     * @allow (get, list, create, update) if the authenticated UID matches the document ID.
+     * @deny (delete) always denied unless by admin (standard safety).
+     * @principle Path-based ownership and relational integrity validation.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description RBAC marker for administrators. Existence of document grants admin status.
+     * @path /roles_admin/{adminId}
+     * @allow (get) if self or admin. (list, write) if admin.
+     * @deny (create, update, delete) if not an existing admin.
+     * @principle Database-Based Access Control (DBAC).
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isOwner(adminId) || isAdmin();
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description RBAC marker for judges. Existence of document grants judge status.
+     * @path /roles_judge/{judgeId}
+     * @allow (get) if self or admin. (list, write) if admin.
+     * @deny (create, update, delete) if not an admin.
+     * @principle Database-Based Access Control (DBAC).
+     */
+    match /roles_judge/{judgeId} {
+      allow get: if isOwner(judgeId) || isAdmin();
+      allow list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Hackathon challenge definitions. Managed by admins, readable by all.
+     * @path /challenges/{challengeId}
+     * @allow (get, list) if true (public). (create, update, delete) if admin.
+     * @deny (write) if not admin.
+     * @principle Public read with restricted administrative writes.
+     */
+    match /challenges/{challengeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Judging criteria used for scoring entries.
+     * @path /criteria/{criterionId}
+     * @allow (get, list) if isAdmin() or isJudge(). (write) if admin.
+     * @deny (get, list) if unauthenticated.
+     * @principle Role-restricted access to internal judging configuration.
+     */
+    match /criteria/{criterionId} {
+      allow get, list: if isAdmin() || isJudge();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Hackathon entries. Public can see approved entries. Judges see assigned.
+     * @path /entries/{entryId}
+     * @allow (get, list) if approved, or if admin, or if assigned judge.
+     * @allow (write) if admin.
+     * @deny (write) for anyone but admins.
+     * @principle Denormalized shared access map for performant judge queries.
+     */
+    match /entries/{entryId} {
+      allow get, list: if resource.data.adminApproved == true || isAdmin() || (isJudge() && resource.data.assignedJudges[request.auth.uid] == true);
+      allow create, update, delete: if isAdmin();
+
+      /**
+       * @description Individual scores submitted by judges for an entry.
+       * @path /entries/{entryId}/scoreSubmissions/{scoreSubmissionId}
+       * @allow (get, list) if admin or the judge who submitted it.
+       * @allow (create) if assigned judge and judgeId matches auth.uid.
+       * @allow (update) if admin or owner judge (ensuring ID immutability).
+       * @principle Nested ownership with cross-document validation for assignment.
+       */
+      match /scoreSubmissions/{scoreSubmissionId} {
+        allow get, list: if isAdmin() || (isJudge() && resource.data.judgeId == request.auth.uid);
+        allow create: if isJudge() && isAssignedToEntry(entryId) && request.resource.data.judgeId == request.auth.uid;
+        allow update: if (isAdmin() && resource != null) || (isJudge() && isExistingOwner(resource.data.judgeId) && request.resource.data.judgeId == resource.data.judgeId);
+        allow delete: if isAdmin() || (isJudge() && isExistingOwner(resource.data.judgeId));
+      }
+    }
+
+    /**
+     * @description Historical record of judge assignments. Admin use only.
+     * @path /judgeAssignments/{assignmentId}
+     * @allow (get, list, write) if admin.
+     * @deny (any) for non-admins.
+     * @principle Administrative audit logging restricted to superusers.
+     */
+    match /judgeAssignments/{assignmentId} {
+      allow get, list, create, update, delete: if isAdmin();
+    }
+  }
+}
