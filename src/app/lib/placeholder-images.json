@@ -24,6 +24,12 @@
       "description": "Starry sky background",
       "imageUrl": "https://picsum.photos/seed/space/1920/1080",
       "imageHint": "stars nebula"
+    },
+    {
+      "id": "main-logo",
+      "description": "Main Hackathon Logo",
+      "imageUrl": "https://picsum.photos/seed/logo/400/400",
+      "imageHint": "hackathon logo"
     }
   ]
 }
