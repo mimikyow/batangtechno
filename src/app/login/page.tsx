@@ -37,9 +37,7 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if this user matches the Admin Email defined in environment variables
       if (user.email === ADMIN_EMAIL) {
-        // Auto-provision admin role document if it doesn't exist
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           externalAuthId: user.uid,
@@ -83,7 +81,7 @@ export default function LoginPage() {
     setIsResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ title: "Reset Link Dispatched" });
+      toast({ title: "Reset Link Sent" });
       setIsResetOpen(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Action Failed", description: error.message });
@@ -158,7 +156,7 @@ export default function LoginPage() {
                 <DialogContent className="bg-card border-border">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
-                    <CardDescription>Enter your email to receive a secure reset link.</CardDescription>
+                    <p className="text-sm text-muted-foreground">Enter your email to receive a secure reset link.</p>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">

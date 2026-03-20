@@ -66,7 +66,7 @@ export default function AdminPage() {
     challengeId: CHALLENGES[0],
     googleDriveVideoLink: "",
     thumbnailImageUrl: "",
-    projectMembers: ["Member 1", "Member 2", "Member 3"]
+    projectMembers: ["", "", ""]
   });
 
   const [newJudge, setNewJudge] = useState({
@@ -110,7 +110,7 @@ export default function AdminPage() {
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, user.email);
-      toast({ title: "Reset Link Dispatched" });
+      toast({ title: "Reset Link Sent" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
     } finally {
@@ -227,12 +227,21 @@ export default function AdminPage() {
     });
 
     setIsAdding(false);
+    setNewEntry({
+      teamName: "",
+      projectSchool: "",
+      projectDescription: "",
+      challengeId: CHALLENGES[0],
+      googleDriveVideoLink: "",
+      thumbnailImageUrl: "",
+      projectMembers: ["", "", ""]
+    });
     toast({ title: "Entry Deployed" });
   };
 
   const handleDeleteEntry = (id: string) => {
     deleteDocumentNonBlocking(doc(db, "entries", id));
-    toast({ title: "Entry Scrubbed" });
+    toast({ title: "Entry Deleted" });
   };
 
   const handleUpdateRank = (id: string, rank: string) => {
