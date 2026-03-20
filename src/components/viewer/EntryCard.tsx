@@ -4,9 +4,9 @@
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, Users, School, Globe, Info } from "lucide-react";
+import { PlayCircle, Users, School, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getGoogleDriveEmbedUrl } from "@/lib/utils";
+import { getGoogleDriveEmbedUrl, getGoogleDriveImageUrl } from "@/lib/utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 interface EntryCardProps {
@@ -25,13 +25,14 @@ interface EntryCardProps {
 
 export function EntryCard({ entry }: EntryCardProps) {
   const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
+  const imageUrl = getGoogleDriveImageUrl(entry.thumbnailImageUrl) || "https://picsum.photos/seed/default/800/600";
   const logo = getPlaceholderImage("hero-logo");
 
   return (
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full rounded-xl">
       <div className="relative aspect-video overflow-hidden bg-black/20">
         <Image 
-          src={entry.thumbnailImageUrl || "https://picsum.photos/seed/default/800/600"} 
+          src={imageUrl} 
           alt={entry.teamName} 
           fill 
           className="object-cover transition-transform group-hover:scale-105" 
