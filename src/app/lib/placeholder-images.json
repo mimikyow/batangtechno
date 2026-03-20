@@ -2,6 +2,18 @@
 {
   "placeholderImages": [
     {
+      "id": "header-logo",
+      "description": "CICS Logo",
+      "imageUrl": "/cics-logo.png",
+      "imageHint": "cics logo"
+    },
+    {
+      "id": "hero-logo",
+      "description": "Batang Techno Logo",
+      "imageUrl": "/bt-logo.png",
+      "imageHint": "bt logo"
+    },
+    {
       "id": "project-1",
       "description": "Smart Mobility App Thumbnail",
       "imageUrl": "https://picsum.photos/seed/smart/800/600",
@@ -24,18 +36,6 @@
       "description": "Starry sky background",
       "imageUrl": "https://picsum.photos/seed/space/1920/1080",
       "imageHint": "stars nebula"
-    },
-    {
-      "id": "header-logo",
-      "description": "CICS Logo",
-      "imageUrl": "/cics-logo.png",
-      "imageHint": "cics logo"
-    },
-    {
-      "id": "hero-logo",
-      "description": "Batang Techno Logo",
-      "imageUrl": "/bt-logo.png",
-      "imageHint": "bt logo"
     }
   ]
 }

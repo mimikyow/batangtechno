@@ -37,6 +37,7 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
+      // Robust check for Admin redirect
       if (user.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase()) {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
