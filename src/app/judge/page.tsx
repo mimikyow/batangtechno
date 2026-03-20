@@ -148,7 +148,7 @@ export default function JudgePage() {
             size="sm" 
             onClick={handleResetPassword}
             disabled={isResettingPassword}
-            className="w-full border-white/10 text-muted-foreground hover:text-accent h-9 text-[10px] uppercase tracking-widest mb-4"
+            className="w-full border-white/10 text-muted-foreground hover:text-white h-9 text-[10px] uppercase tracking-widest mb-4"
           >
             {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <KeyRound className="w-3 h-3 mr-2" />}
             Change My Password

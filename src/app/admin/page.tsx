@@ -255,7 +255,7 @@ export default function AdminPage() {
               size="sm" 
               onClick={handleResetPassword}
               disabled={isResettingPassword}
-              className="border-white/10 text-muted-foreground hover:text-accent h-8 text-[10px] uppercase tracking-widest"
+              className="border-white/10 text-muted-foreground hover:text-white h-8 text-[10px] uppercase tracking-widest"
             >
               {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3 mr-2" />}
               Reset My Password
