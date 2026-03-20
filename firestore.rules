@@ -26,13 +26,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks if the authenticated judge is assigned to a specific entry.
-     */
-    function isAssignedToEntry(entryId) {
-      return get(/databases/$(database)/documents/entries/$(entryId)).data.assignedJudges[request.auth.uid] == true;
-    }
-
     // --- Collection Rules ---
 
     match /users/{userId} {
@@ -68,13 +61,16 @@ service cloud.firestore {
     }
 
     match /entries/{entryId} {
-      // Public can see approved entries. Admins and assigned judges can see any.
-      allow get, list: if (resource != null && resource.data.adminApproved == true) || isAdmin() || (isJudge() && resource.data.assignedJudges[request.auth.uid] == true);
+      // Public can see approved entries. Admins and Judges can see all entries for evaluation.
+      allow get, list: if (resource != null && resource.data.adminApproved == true) || isAdmin() || isJudge();
       allow create, update, delete: if isAdmin();
 
       match /scoreSubmissions/{scoreSubmissionId} {
+        // Judges can read their own scores, Admins can read all.
         allow get, list: if isAdmin() || (isJudge() && resource.data.judgeId == request.auth.uid);
-        allow create: if isJudge() && isAssignedToEntry(entryId) && request.resource.data.judgeId == request.auth.uid;
+        // Any judge can create a score for any entry in this prototype.
+        allow create: if isJudge() && request.resource.data.judgeId == request.auth.uid;
+        // Judges can update their own scores, Admins can update any.
         allow update: if isAdmin() || (isJudge() && resource.data.judgeId == request.auth.uid);
         allow delete: if isAdmin();
       }
