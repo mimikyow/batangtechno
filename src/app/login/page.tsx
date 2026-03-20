@@ -77,16 +77,14 @@ export default function LoginPage() {
 
   const handleForgotPassword = async () => {
     if (!resetEmail) {
-      toast({ variant: "destructive", title: "Error", description: "Please enter your email address." });
+      toast({ variant: "destructive", title: "Error" });
       return;
     }
 
     setIsResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ 
-        title: "Security Link Dispatched"
-      });
+      toast({ title: "Security Link Dispatched" });
       setIsResetOpen(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed", description: error.message });

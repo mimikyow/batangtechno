@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -109,9 +110,7 @@ export default function AdminPage() {
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, user.email);
-      toast({ 
-        title: "Security Link Sent"
-      });
+      toast({ title: "Security Link Sent" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: error.message });
     } finally {
@@ -212,12 +211,12 @@ export default function AdminPage() {
 
     setIsProcessing(false);
     setProcessingStatus("IDLE");
-    toast({ title: "Leaderboard Published", description: "Top 10 ranks synced to Public Board." });
+    toast({ title: "Leaderboard Published" });
   };
 
   const handleSaveEntry = () => {
     if (!newEntry.teamName || !newEntry.projectSchool) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "Team name and school are required." });
+      toast({ variant: "destructive", title: "Missing Fields" });
       return;
     }
     
@@ -228,12 +227,12 @@ export default function AdminPage() {
     });
 
     setIsAdding(false);
-    toast({ title: "Entry Deployed", description: `${newEntry.teamName} is now live.` });
+    toast({ title: "Entry Deployed" });
   };
 
   const handleDeleteEntry = (id: string) => {
     deleteDocumentNonBlocking(doc(db, "entries", id));
-    toast({ title: "Entry Scrubbed", description: "Record removed from database." });
+    toast({ title: "Entry Scrubbed" });
   };
 
   const handleUpdateRank = (id: string, rank: string) => {

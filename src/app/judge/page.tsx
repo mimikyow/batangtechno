@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -100,9 +101,7 @@ export default function JudgePage() {
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, user.email);
-      toast({ 
-        title: "Reset Link Dispatched"
-      });
+      toast({ title: "Reset Link Dispatched" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Action Failed", description: error.message });
     } finally {
@@ -121,10 +120,7 @@ export default function JudgePage() {
       adminUploaded: false
     });
 
-    toast({
-      title: "Score Recorded",
-      description: `Evaluation for ${selectedEntry.teamName} has been transmitted.`
-    });
+    toast({ title: "Score Recorded" });
     setSelectedEntry(null);
     setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });
   };
