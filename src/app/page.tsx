@@ -1,3 +1,4 @@
+
 "use client";
 
 import { TopThree } from "@/components/viewer/TopThree";
@@ -17,7 +18,7 @@ export default function Home() {
   const [filter, setFilter] = useState("ALL");
   const db = useFirestore();
 
-  const logo = getPlaceholderImage("main-logo");
+  const logo = getPlaceholderImage("hero-logo");
 
   const entriesQuery = useMemoFirebase(() => {
     return query(collection(db, "entries"), where("adminApproved", "==", true));

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -24,7 +25,7 @@ interface EntryCardProps {
 
 export function EntryCard({ entry }: EntryCardProps) {
   const embedUrl = getGoogleDriveEmbedUrl(entry.googleDriveVideoLink);
-  const logo = getPlaceholderImage("main-logo");
+  const logo = getPlaceholderImage("hero-logo");
 
   return (
     <div className="glass-card overflow-hidden group hover:border-accent/50 transition-all flex flex-col h-full rounded-xl">

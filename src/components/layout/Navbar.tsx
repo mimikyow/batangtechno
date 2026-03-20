@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -19,7 +20,7 @@ export function Navbar() {
   const auth = useAuth();
   const db = useFirestore();
 
-  const logo = getPlaceholderImage("main-logo");
+  const logo = getPlaceholderImage("header-logo");
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 

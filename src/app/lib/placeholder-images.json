@@ -26,10 +26,16 @@
       "imageHint": "stars nebula"
     },
     {
-      "id": "main-logo",
-      "description": "Main Hackathon Logo",
-      "imageUrl": "https://picsum.photos/seed/logo/400/400",
-      "imageHint": "hackathon logo"
+      "id": "header-logo",
+      "description": "CICS Logo",
+      "imageUrl": "/cics-logo.png",
+      "imageHint": "cics logo"
+    },
+    {
+      "id": "hero-logo",
+      "description": "Batang Techno Logo",
+      "imageUrl": "/bt-logo.png",
+      "imageHint": "bt logo"
     }
   ]
 }
