@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -19,16 +20,17 @@
           "description": "Email address of the user, primarily used for communication and identification.",
           "format": "email"
         },
+        "username": {
+          "type": "string",
+          "description": "Unique username for the user."
+        },
         "name": {
           "type": "string",
           "description": "Full name of the user for display purposes."
         },
         "role": {
           "type": "string",
-          "description": "The assigned role of the user within the application (e.g., 'admin', 'judge').",
-          "items": {
-            "type": "string"
-          }
+          "description": "The assigned role of the user within the application (e.g., 'admin', 'judge')."
         }
       },
       "required": [
@@ -248,8 +250,7 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
@@ -261,7 +262,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores general user profile information. Access is typically for the user themselves or for administrators. The 'role' field here is for informational display, not for security rule enforcement.",
+          "description": "Stores general user profile information. Access is typically for the user themselves or for administrators.",
           "params": [
             {
               "name": "userId",
@@ -277,7 +278,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "A dedicated collection for 'admin' roles. Document ID (adminId) is the user's externalAuthId (UID). Existence of a document here grants administrative privileges, adhering to the DBAC principle. Document content can be minimal (e.g., {}).",
+          "description": "A dedicated collection for 'admin' roles.",
           "params": [
             {
               "name": "adminId",
@@ -293,7 +294,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "A dedicated collection for 'judge' roles. Document ID (judgeId) is the user's externalAuthId (UID). Existence of a document here grants judge privileges, adhering to the DBAC principle. Document content can be minimal (e.g., {}).",
+          "description": "A dedicated collection for 'judge' roles.",
           "params": [
             {
               "name": "judgeId",
@@ -309,7 +310,7 @@
           "schema": {
             "$ref": "#/backend/entities/Challenge"
           },
-          "description": "Stores definitions of hackathon challenges. Publicly readable (indirectly via entries) and manageable by administrators. Homogeneous security posture.",
+          "description": "Stores definitions of hackathon challenges.",
           "params": [
             {
               "name": "challengeId",
@@ -325,7 +326,7 @@
           "schema": {
             "$ref": "#/backend/entities/JudgingCriterion"
           },
-          "description": "Defines the judging criteria. Readable by judges and administrators, and manageable by administrators. Not publicly exposed.",
+          "description": "Defines the judging criteria.",
           "params": [
             {
               "name": "criterionId",
@@ -341,7 +342,7 @@
           "schema": {
             "$ref": "#/backend/entities/Entry"
           },
-          "description": "Stores hackathon entries. Includes denormalized 'adminApproved' for public viewing, 'finalRank' for top 3 display, and 'assignedJudges: { [judgeUid]: true }' map for judge-specific authorization independence and QAPs. Fully manageable by administrators.",
+          "description": "Stores hackathon entries.",
           "params": [
             {
               "name": "entryId",
@@ -349,44 +350,7 @@
             }
           ]
         }
-      },
-      {
-        "path": "/entries/{entryId}/scoreSubmissions/{scoreSubmissionId}",
-        "definition": {
-          "entityName": "ScoreSubmission",
-          "schema": {
-            "$ref": "#/backend/entities/ScoreSubmission"
-          },
-          "description": "Records individual score submissions by judges for specific entries and criteria. Features path-based ownership for judges (via judgeId in content) and includes an 'adminUploaded' field. Judges can create/update their own submissions, while administrators can read and update all. Authorization for judges to write is validated against the parent entry's 'assignedJudges' map for data integrity.",
-          "params": [
-            {
-              "name": "entryId",
-              "description": "The unique ID of the parent hackathon entry."
-            },
-            {
-              "name": "scoreSubmissionId",
-              "description": "The unique ID for this score submission, typically a combination of judgeId and criterionId for uniqueness or an auto-generated ID."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/judgeAssignments/{assignmentId}",
-        "definition": {
-          "entityName": "JudgeAssignment",
-          "schema": {
-            "$ref": "#/backend/entities/JudgeAssignment"
-          },
-          "description": "A record-keeping collection for judge assignments. While the primary authorization is handled by denormalized 'assignedJudges' in the Entry document, this collection can be used by administrators for historical tracking or specific administrative flows. Its data is not directly used for real-time authorization checks via 'get()' in rules.",
-          "params": [
-            {
-              "name": "assignmentId",
-              "description": "The unique ID for the judge assignment record."
-            }
-          ]
-        }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to provide clear authorization, scalability, and debuggability following the core design principles and mandates. Authorization Independence is a critical aspect, achieved primarily through denormalization of authorization context directly within the relevant documents, thereby minimizing the need for `get()` calls in security rules for read operations and ensuring QAP compliance. Roles are handled via DBAC (Database Access Control) using dedicated role collections, allowing for simple 'existence' checks in rules, decoupled from the main user profile.\n\nHere's how the key principles are applied:\n\n1.  **Authorization Independence (CRITICAL):**\n    *   **Roles:** User roles (`admin`, `judge`) are determined by the existence of a document in dedicated collections (`/roles_admin/{uid}` and `/roles_judge/{uid}`), where the document ID is the user's `request.auth.uid`. This eliminates `get()` calls to a 'users' collection to determine a user's role for authorization. Rules will check `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` directly.\n    *   **Judge-Entry Assignment:** For a judge to access specific entries, the `Entry` document itself (`/entries/{entryId}`) includes a `assignedJudges` map (e.g., `assignedJudges: { 'judgeUid1': true, 'judgeUid2': true }`). This denormalized field allows judges to query and read *only* their assigned entries using a `where('assignedJudges.' + request.auth.uid, '==', true)` clause, without any `get()` calls in the read rules. This is a core part of achieving QAPs for judges.\n    *   **Score Submission Validation (Writes):** While read operations are `get()`-free for authorization, creating or updating a `ScoreSubmission` still requires validation to ensure the submitting judge is actually assigned to the `entryId` they are scoring. This requires a `get()` call to the parent `Entry` document (`exists(/entries/$(resource.data.entryId)).data.assignedJudges.$(request.auth.uid)`). This `get()` is used for *data integrity validation* during a write, not for hierarchical authorization inheritance of read/write permissions. This is a common and often necessary pattern when cross-document relationships require strict consistency. The rule checks a condition on a *linked* document, not a parent in a hierarchical permission scheme, thus aligning with the spirit of the 'Authorization Independence' mandate which focuses on avoiding dependencies that 'break atomic operations' or infer access from parent document content.\n\n2.  **Clarity of Intent (Debuggability):** Collection names (`roles_admin`, `entries`, `criteria`) and document fields (`adminApproved`, `assignedJudges`, `finalRank`) explicitly state their purpose and directly map to authorization logic. Wildcards like `{entryId}` are descriptive.\n\n3.  **DBAC (No Custom Claims):** Roles are exclusively stored in the database (`/roles_admin`, `/roles_judge`) and checked via `exists()` in security rules using `request.auth.uid`. The `role` field in `/users/{userId}` is for informational purposes or UI display, not for security rules.\n\n4.  **QAPs (Rules are not Filters):**\n    *   **Viewer - All Entries:** Viewers can `list` all `adminApproved` entries by querying `/entries` with `where('adminApproved', '==', true)`. The security rule simply allows reads if `resource.data.adminApproved == true`.\n    *   **Viewer - Top 3 Entries:** Viewers can `list` the top 3 by querying `/entries` with `where('adminApproved', '==', true)` and `where('finalRank', '<=', 3)`. The rule remains the same, ensuring only approved entries are seen.\n    *   **Judge - Assigned Entries:** Judges can `list` only their assigned entries by querying `/entries` with `where('assignedJudges.' + request.auth.uid, '==', true)`. The rule enforces `resource.data.assignedJudges[request.auth.uid] == true`.\n    *   **Judge - Own Score Submissions:** Judges can `list` their own score submissions under a specific entry by querying `/entries/{entryId}/scoreSubmissions` with `where('judgeId', '==', request.auth.uid)`. The rule ensures `resource.data.judgeId == request.auth.uid`.\n    All these `list` operations are efficient and secure as rules validate against fields present in the queried documents, not filtered afterwards.\n\n5.  **Invariants:** Ownership is explicit via path-based ownership or `ownerId`/`judgeId` fields. Timestamps (`submissionDate`, `assignedDate`) are included where relevant. Denormalized fields (`assignedJudges`, `adminApproved`, `finalRank`) are managed by the admin role to maintain integrity and support efficient queries.\n\n**Structural Segregation:** Collections like `roles_admin`, `roles_judge`, `challenges`, `criteria`, and `entries` each have a distinct, homogeneous security posture, simplifying security rules. For example, all documents in `challenges` are publicly readable (indirectly via entries), while documents in `criteria` are only readable by authenticated judges and admins.\n\n**Access Modeling:**\n*   **Private Data:** `users/{userId}` for user profiles (path-based ownership).\n*   **Global Roles:** `roles_admin/{adminId}` and `roles_judge/{judgeId}` for explicit role-based access control (existence over content).\n*   **Collaborative/Shared Data (Entries):** `entries/{entryId}` uses a `members` map-like structure (`assignedJudges`) for collaborative access by judges.\n*   **Nested User-Owned Data (Scores):** `entries/{entryId}/scoreSubmissions/{scoreSubmissionId}` where a judge owns their specific score submission within an entry.\n\nThis design provides a robust and clear structure, supporting all specified requirements for the Batang Techno application."
+    ]
   }
 }

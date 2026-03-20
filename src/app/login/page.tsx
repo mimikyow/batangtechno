@@ -7,15 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth, useFirestore } from "@/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { Rocket, ShieldCheck, User as UserIcon, Loader2 } from "lucide-react";
+import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  
   const auth = useAuth();
   const db = useFirestore();
   const router = useRouter();
@@ -28,12 +33,15 @@ export default function LoginPage() {
     try {
       let userCredential;
       try {
-        // Attempt login first
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       } catch (error: any) {
-        // If user doesn't exist, create them for this prototype
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
-          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          // Special case for initial admin setup in prototype
+          if (email === "admin@email.com" && password === "admin123") {
+            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          } else {
+            throw error;
+          }
         } else {
           throw error;
         }
@@ -41,41 +49,49 @@ export default function LoginPage() {
 
       const user = userCredential.user;
 
-      // Hardcoded Role Assignment logic based on email
       if (email === "admin@email.com") {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
           email: user.email,
           role: "admin",
           name: "System Admin"
-        });
-      } else if (email === "judge@email.com") {
-        await setDoc(doc(db, "roles_judge", user.uid), {
-          id: user.uid,
-          email: user.email,
-          role: "judge",
-          name: "Panel Judge"
-        });
+        }, { merge: true });
       }
 
       toast({ 
         title: "Access Granted", 
-        description: `Welcome back, ${email === 'admin@email.com' ? 'Administrator' : email === 'judge@email.com' ? 'Judge' : 'User'}.` 
+        description: "Welcome back to the Nebula." 
       });
       
-      // Redirect based on role
       if (email === "admin@email.com") router.push("/admin");
-      else if (email === "judge@email.com") router.push("/judge");
       else router.push("/");
 
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
         title: "Auth Failed", 
-        description: error.message || "Invalid credentials. Password must be at least 6 characters." 
+        description: error.message || "Invalid credentials." 
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      toast({ variant: "destructive", title: "Error", description: "Please enter your email address." });
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({ title: "Email Sent", description: "Password reset instructions have been sent to your inbox." });
+      setIsResetOpen(false);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Failed", description: error.message });
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
@@ -95,14 +111,8 @@ export default function LoginPage() {
             Secure Access
           </CardTitle>
           <CardDescription className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
-            Enter your credentials for the Batang Techno Nebula
+            Enter your credentials
           </CardDescription>
-          <div className="bg-white/5 p-3 rounded-md text-[10px] text-muted-foreground text-left space-y-1">
-            <p className="font-bold text-accent">PROTOTYPE CREDENTIALS:</p>
-            <p>Admin: admin@email.com / admin123</p>
-            <p>Judge: judge@email.com / judge123</p>
-            <p className="italic text-[9px] mt-1 opacity-70">*Passwords must be 6+ chars</p>
-          </div>
         </CardHeader>
         <form onSubmit={handleAuth}>
           <CardContent className="space-y-4">
@@ -132,8 +142,40 @@ export default function LoginPage() {
                 required
               />
             </div>
+            <div className="flex justify-end">
+              <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="link" className="text-xs text-muted-foreground hover:text-accent p-0 h-auto">
+                    Forgot Password?
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-border">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
+                    <CardDescription>Enter your email to receive a secure reset code.</CardDescription>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Email Address</label>
+                      <Input 
+                        type="email" 
+                        placeholder="your@email.com" 
+                        value={resetEmail}
+                        onChange={e => setResetEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsResetOpen(false)} className="uppercase text-xs">Cancel</Button>
+                    <Button className="bg-accent uppercase text-xs font-bold" onClick={handleForgotPassword} disabled={isResetLoading}>
+                      {isResetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Reset Link"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter>
             <Button 
               type="submit" 
               className="w-full bg-accent hover:bg-accent/80 font-bold py-6 text-lg transition-all shadow-[0_0_15px_rgba(51,153,255,0.3)]"
