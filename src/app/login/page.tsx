@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth, useFirestore } from "@/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { Rocket, ShieldCheck, User as UserIcon, Loader2, KeyRound, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -31,46 +31,31 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      let userCredential;
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
-      } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
-          // Special case for initial admin setup in prototype
-          if (email === "admin@email.com" && password === "admin123") {
-            userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          } else {
-            throw error;
-          }
-        } else {
-          throw error;
-        }
-      }
-
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      if (email === "admin@email.com") {
-        await setDoc(doc(db, "roles_admin", user.uid), {
-          id: user.uid,
-          email: user.email,
-          role: "admin",
-          name: "System Admin"
-        }, { merge: true });
-      }
+      // Check for administrative or judge roles in Firestore
+      const adminDoc = await getDoc(doc(db, "roles_admin", user.uid));
+      const judgeDoc = await getDoc(doc(db, "roles_judge", user.uid));
 
       toast({ 
         title: "Access Granted", 
-        description: "Welcome back to the Nebula." 
+        description: "Credentials verified. Accessing system..." 
       });
       
-      if (email === "admin@email.com") router.push("/admin");
-      else router.push("/");
+      if (adminDoc.exists()) {
+        router.push("/admin");
+      } else if (judgeDoc.exists()) {
+        router.push("/judge");
+      } else {
+        router.push("/");
+      }
 
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
         title: "Auth Failed", 
-        description: error.message || "Invalid credentials." 
+        description: "Invalid credentials or unauthorized access." 
       });
     } finally {
       setIsLoading(false);
@@ -86,7 +71,7 @@ export default function LoginPage() {
     setIsResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
-      toast({ title: "Email Sent", description: "Password reset instructions have been sent to your inbox." });
+      toast({ title: "Email Sent", description: "Password reset instructions have been sent to your email." });
       setIsResetOpen(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed", description: error.message });

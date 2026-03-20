@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -96,6 +97,7 @@ export default function AdminPage() {
     const automatedPassword = `BT_${newJudge.name.replace(/\s+/g, '')}`;
     
     try {
+      // Use a secondary app instance to create the user without logging out the admin
       const secondaryApp = !getApps().find(app => app.name === 'secondary') 
         ? initializeApp(firebaseConfig, 'secondary')
         : getApp('secondary');
@@ -105,6 +107,7 @@ export default function AdminPage() {
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newJudge.email, automatedPassword);
       const judgeUid = userCredential.user.uid;
 
+      // Store in role collection
       await setDoc(doc(db, "roles_judge", judgeUid), {
         id: judgeUid,
         externalAuthId: judgeUid,
@@ -114,6 +117,7 @@ export default function AdminPage() {
         role: "judge"
       });
 
+      // Store in users collection
       await setDoc(doc(db, "users", judgeUid), {
         id: judgeUid,
         externalAuthId: judgeUid,
@@ -125,7 +129,7 @@ export default function AdminPage() {
 
       toast({ 
         title: "Judge Created", 
-        description: `Credentials: ${newJudge.email} / ${automatedPassword}` 
+        description: `Account initialized. Credentials: ${newJudge.email} / ${automatedPassword}` 
       });
       
       setNewJudge({ name: "", username: "", email: "" });
@@ -194,16 +198,6 @@ export default function AdminPage() {
     toast({ title: "Leaderboard Published", description: "Top 10 ranks updated based on weighted scores." });
   };
 
-  const handleAddMember = () => {
-    setNewEntry(prev => ({ ...prev, projectMembers: [...prev.projectMembers, `Member ${prev.projectMembers.length + 1}`] }));
-  };
-
-  const handleMemberChange = (index: number, value: string) => {
-    const updated = [...newEntry.projectMembers];
-    updated[index] = value;
-    setNewEntry(prev => ({ ...prev, projectMembers: updated }));
-  };
-
   const handleSaveEntry = () => {
     if (!newEntry.teamName || !newEntry.projectSchool) {
       toast({ variant: "destructive", title: "Missing Fields", description: "Team name and school are required." });
@@ -213,17 +207,16 @@ export default function AdminPage() {
     addDocumentNonBlocking(collection(db, "entries"), {
       ...newEntry,
       submissionDate: new Date().toISOString(),
-      adminApproved: true,
-      assignedJudges: {}
+      adminApproved: true
     });
 
     setIsAdding(false);
-    toast({ title: "Entry Uploaded", description: `${newEntry.teamName} has been added.` });
+    toast({ title: "Entry Uploaded", description: `${newEntry.teamName} has been deployed.` });
   };
 
   const handleDeleteEntry = (id: string) => {
     deleteDocumentNonBlocking(doc(db, "entries", id));
-    toast({ title: "Entry Removed", description: "Entry decommissioned." });
+    toast({ title: "Entry Removed", description: "Mission decommissioned." });
   };
 
   const handleUpdateRank = (id: string, rank: string) => {
