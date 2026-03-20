@@ -37,7 +37,6 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      // Robust check for Admin redirect
       if (user.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase()) {
         await setDoc(doc(db, "roles_admin", user.uid), {
           id: user.uid,
@@ -47,7 +46,7 @@ export default function LoginPage() {
           role: "admin"
         }, { merge: true });
         
-        toast({ title: "Command Access Authorized" });
+        toast({ title: "Authorized" });
         router.push("/admin");
         return;
       }
@@ -66,7 +65,7 @@ export default function LoginPage() {
       toast({ 
         variant: "destructive", 
         title: "Auth Failed", 
-        description: "Invalid credentials or unauthorized access." 
+        description: "Invalid credentials." 
       });
     } finally {
       setIsLoading(false);
@@ -107,7 +106,7 @@ export default function LoginPage() {
             Secure Access
           </CardTitle>
           <CardDescription className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
-            Enter your credentials
+            Credentials Required
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleAuth}>
@@ -150,14 +149,14 @@ export default function LoginPage() {
             <div className="flex justify-end">
               <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="link" className="text-xs text-muted-foreground hover:text-accent p-0 h-auto">
+                  <Button variant="link" className="text-xs text-muted-foreground hover:text-white p-0 h-auto">
                     Forgot Password?
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-card border-border">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold uppercase italic">Reset Password</DialogTitle>
-                    <p className="text-sm text-muted-foreground">Enter your email to receive a secure reset link.</p>
+                    <p className="text-sm text-muted-foreground">Enter your email for a secure reset link.</p>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">
@@ -171,7 +170,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="ghost" onClick={() => setIsResetOpen(false)} className="uppercase text-xs">Cancel</Button>
+                    <Button variant="ghost" onClick={() => setIsResetOpen(false)} className="uppercase text-xs hover:text-white">Cancel</Button>
                     <Button className="bg-accent uppercase text-xs font-bold" onClick={handleForgotPassword} disabled={isResetLoading}>
                       {isResetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Reset Link"}
                     </Button>

@@ -97,8 +97,8 @@ export default function AdminPage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Admin privileges required. Contact sys-admin.</p>
-        <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20">
+        <p className="text-muted-foreground max-w-md mb-8">Admin privileges required.</p>
+        <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20 hover:text-white">
           Go to Login
         </Button>
       </div>
@@ -146,7 +146,7 @@ export default function AdminPage() {
       });
 
       toast({ 
-        title: "Judge Account Ready", 
+        title: "Judge Created", 
         description: `Credentials: ${newJudge.email} / ${automatedPassword}` 
       });
       
@@ -195,7 +195,7 @@ export default function AdminPage() {
       setRankedResults(sorted);
       setProcessingStatus("READY");
     } catch (error) {
-      toast({ variant: "destructive", title: "Process Failed", description: "Check Firestore connection." });
+      toast({ variant: "destructive", title: "Process Failed", description: "Connection error." });
       setProcessingStatus("IDLE");
     }
   };
@@ -263,7 +263,7 @@ export default function AdminPage() {
               className="border-white/10 text-muted-foreground hover:text-white h-8 text-[10px] uppercase tracking-widest"
             >
               {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3 mr-2" />}
-              Reset My Password
+              Reset Password
             </Button>
           </div>
           <p className="text-muted-foreground uppercase text-xs tracking-widest">Admin Control Panel</p>
@@ -278,7 +278,7 @@ export default function AdminPage() {
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold uppercase italic">New Judge Protocol</DialogTitle>
+                <DialogTitle className="text-2xl font-bold uppercase italic">Register Judge</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -295,7 +295,7 @@ export default function AdminPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsAddingJudge(false)} className="uppercase text-xs">Cancel</Button>
+                <Button variant="ghost" onClick={() => setIsAddingJudge(false)} className="uppercase text-xs hover:text-white">Cancel</Button>
                 <Button className="bg-accent uppercase text-xs font-bold" onClick={handleCreateJudge}>Authorize Judge</Button>
               </DialogFooter>
             </DialogContent>
@@ -345,7 +345,7 @@ export default function AdminPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsAdding(false)} className="uppercase text-xs">Cancel</Button>
+                <Button variant="ghost" onClick={() => setIsAdding(false)} className="uppercase text-xs hover:text-white">Cancel</Button>
                 <Button className="bg-accent uppercase text-xs font-bold" onClick={handleSaveEntry}>Save Entry</Button>
               </DialogFooter>
             </DialogContent>
@@ -354,7 +354,7 @@ export default function AdminPage() {
           <Dialog open={isProcessing} onOpenChange={setIsProcessing}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 hover:text-white uppercase text-xs font-bold tracking-widest">
-                <Zap className="w-4 h-4 mr-2" /> Leaderboard Engine
+                <Zap className="w-4 h-4 mr-2" /> Leaderboard
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl bg-card border-border">
@@ -409,7 +409,7 @@ export default function AdminPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
         <div className="xl:col-span-2 glass-card rounded-xl overflow-hidden">
           <div className="p-4 border-b border-white/10 bg-white/5">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Active Missions</h2>
+            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Entries</h2>
           </div>
           <Table>
             <TableHeader className="bg-white/5">
@@ -454,7 +454,7 @@ export default function AdminPage() {
 
         <div className="glass-card rounded-xl overflow-hidden h-fit">
           <div className="p-4 border-b border-white/10 bg-white/5">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Authorized Judges</h2>
+            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Judges</h2>
           </div>
           <div className="p-4 space-y-4">
             {judges?.map((judge) => (

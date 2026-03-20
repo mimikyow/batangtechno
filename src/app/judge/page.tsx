@@ -20,25 +20,25 @@ const CRITERIA = [
     key: "mastery", 
     label: "Mastery and Use of Software Concepts", 
     weight: "30%", 
-    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution." 
+    desc: "Evaluates application of techniques to develop functional solutions." 
   },
   { 
     key: "innovation", 
     label: "Novelty and Innovation", 
     weight: "30%", 
-    desc: "Assesses the originality of the project and the creativity behind its concept and implementation." 
+    desc: "Assesses originality and creativity." 
   },
   { 
     key: "impact", 
     label: "Real-world Impact and Viability", 
     weight: "30%", 
-    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment." 
+    desc: "Measures relevance and potential for practical deployment." 
   },
   { 
     key: "compliance", 
-    label: "Compliance to Rules and Restrictions", 
+    label: "Compliance to Rules", 
     weight: "10%", 
-    desc: "Determines the extent to which the project follows all competition guidelines." 
+    desc: "Follows competition guidelines." 
   },
 ];
 
@@ -50,7 +50,6 @@ export default function JudgePage() {
   const { toast } = useToast();
 
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
-  
   const { data: judgeRole, isLoading: isJudgeChecking } = useDoc(judgeDocRef);
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
@@ -76,7 +75,7 @@ export default function JudgePage() {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-12 h-12 text-accent animate-spin" />
-        <p className="text-muted-foreground uppercase tracking-widest text-xs">Scanning Mission Logs...</p>
+        <p className="text-muted-foreground uppercase tracking-widest text-xs">Scanning Log...</p>
       </div>
     );
   }
@@ -88,8 +87,8 @@ export default function JudgePage() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Access Denied</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Your credentials do not grant access to the Judge Panel.</p>
-        <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20">
+        <p className="text-muted-foreground max-w-md mb-8">Unauthorized for Judge Panel.</p>
+        <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20 hover:text-white">
           Go to Login
         </Button>
       </div>
@@ -145,7 +144,7 @@ export default function JudgePage() {
             className="w-full border-white/10 text-muted-foreground hover:text-white h-9 text-[10px] uppercase tracking-widest mb-4"
           >
             {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <KeyRound className="w-3 h-3 mr-2" />}
-            Change My Password
+            Reset Password
           </Button>
 
           <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2">
@@ -223,7 +222,7 @@ export default function JudgePage() {
                     ))}
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-white">Judge's Final Thoughts</label>
+                      <label className="text-sm font-bold text-white">Final Thoughts</label>
                       <Textarea 
                         placeholder="" 
                         className="bg-black/20 border-white/10 h-24 text-sm"
@@ -245,7 +244,7 @@ export default function JudgePage() {
                 <AlertCircle className="w-10 h-10 text-accent" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Awaiting Selection</h2>
-              <p className="text-muted-foreground max-w-xs">Please select a mission from the log to begin evaluation.</p>
+              <p className="text-muted-foreground max-w-xs">Select a project to begin.</p>
             </div>
           )}
         </div>

@@ -16,7 +16,7 @@ import { getPlaceholderImage } from "@/lib/placeholder-images";
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
   const db = useFirestore();
 
@@ -112,7 +112,7 @@ export function Navbar() {
                 ))}
                 {user && (
                   <div className="mt-4 border-t border-white/10 pt-4">
-                    <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={handleLogout}>
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-white" onClick={handleLogout}>
                       <LogOut className="w-5 h-5 mr-4" />
                       Logout
                     </Button>
