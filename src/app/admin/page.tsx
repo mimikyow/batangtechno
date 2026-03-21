@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -30,22 +29,6 @@ export default function AdminPage() {
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase();
-
-  useEffect(() => {
-    if (user && isAdmin) {
-      const provisionAdmin = async () => {
-        const adminRef = doc(db, "roles_admin", user.uid);
-        await setDoc(adminRef, {
-          id: user.uid,
-          externalAuthId: user.uid,
-          email: user.email,
-          name: user.displayName || "System Admin",
-          role: "admin"
-        }, { merge: true });
-      };
-      provisionAdmin();
-    }
-  }, [user, isAdmin, db]);
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
   const { data: entries } = useCollection(entriesQuery);

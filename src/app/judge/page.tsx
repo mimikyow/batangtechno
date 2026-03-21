@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -111,6 +110,7 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
+    // Use Judge UID as the document ID for the score to ensure 1 score per judge per entry
     const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
     
     setDocumentNonBlocking(scoreRef, {
