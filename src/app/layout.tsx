@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Batang Techno | Mission Command',
+  title: 'Batang Techno',
   description: 'A futuristic judging platform for local hackathons',
 };
 
