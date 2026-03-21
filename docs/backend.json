@@ -31,6 +31,11 @@
         "role": {
           "type": "string",
           "description": "The assigned role of the user within the application (e.g., 'admin', 'judge')."
+        },
+        "judgedEntries": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of entry IDs the judge has evaluated."
         }
       },
       "required": [
@@ -133,6 +138,11 @@
           "description": "A URL to an image file used as a thumbnail.",
           "format": "uri"
         },
+        "pitchDeckLink": {
+          "type": "string",
+          "description": "A URL to the finalist pitch deck.",
+          "format": "uri"
+        },
         "projectDescription": {
           "type": "string",
           "description": "A comprehensive description of the hackathon project."
@@ -157,6 +167,14 @@
         "adminApproved": {
           "type": "boolean",
           "description": "Indicates if an admin has approved the entry."
+        },
+        "top10Published": {
+          "type": "boolean",
+          "description": "Indicates if the entry is part of the published Top 10 finalists."
+        },
+        "top3Published": {
+          "type": "boolean",
+          "description": "Indicates if the entry is part of the published Top 3 winners."
         }
       },
       "required": [

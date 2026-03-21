@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, arrayUnion } from "firebase/firestore";
@@ -111,7 +111,6 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
-    // Use the judge's UID as the document ID to ensure only one submission per judge per entry
     const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
     
     setDocumentNonBlocking(scoreRef, {
@@ -123,19 +122,21 @@ export default function JudgePage() {
       comment: scores.comment
     }, { merge: true });
 
-    // Mark as judged in the judge's profile
     if (judgeDocRef) {
       updateDocumentNonBlocking(judgeDocRef, {
         judgedEntries: arrayUnion(selectedEntry.id)
       });
     }
 
-    toast({ title: "Score Synchronized" });
+    toast({ title: "Evaluation Synchronized" });
     setSelectedEntry(null);
     setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });
   };
 
   const isJudged = (entryId: string) => {
+    // If it's a finalist (Top 10 published), we might allow re-judging for the pitch deck round.
+    // However, for simplicity per the request "disable it from being clicked", we'll check status.
+    // To allow "separate judging", we could clear this flag from Admin, but here we'll follow "disable it".
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
@@ -145,11 +146,9 @@ export default function JudgePage() {
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-80 flex flex-col gap-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{entries?.length || 0}</Badge>
-            </h2>
-          </div>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
+            Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{entries?.length || 0}</Badge>
+          </h2>
           
           <Button 
             variant="outline" 
@@ -183,9 +182,10 @@ export default function JudgePage() {
                   <div className="flex items-center justify-between mb-1">
                     <div className={`font-bold text-sm ${judged ? 'text-muted-foreground' : 'text-white'}`}>{entry.teamName}</div>
                     {judged && <Lock className="w-3 h-3 text-accent" />}
+                    {entry.top10Published && !judged && <Presentation className="w-3 h-3 text-accent animate-pulse" />}
                   </div>
                   <div className="text-[10px] text-muted-foreground uppercase">
-                    {judged ? "LOGGED & SECURED" : entry.projectMembers?.[0]?.school || "Multiple Schools"}
+                    {judged ? "LOGGED & SECURED" : (entry.projectMembers?.[0]?.school || "Academic Center")}
                   </div>
                 </button>
               );
@@ -200,24 +200,36 @@ export default function JudgePage() {
                 <div className="flex-1 space-y-6">
                   <div>
                     <h1 className="text-4xl font-black text-white glow-accent italic">{selectedEntry.teamName}</h1>
-                    <p className="text-accent font-semibold">{selectedEntry.challengeId}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-accent font-semibold">{selectedEntry.challengeId}</p>
+                      {selectedEntry.top10Published && <Badge className="bg-accent/20 text-accent border-accent/40">FINALIST ROUND</Badge>}
+                    </div>
                   </div>
                   
                   <div className="aspect-video relative rounded-2xl overflow-hidden border border-white/10 bg-black">
-                     <iframe
-                        width="100%"
-                        height="100%"
-                        src={selectedEmbedUrl}
-                        title="Pitch Video"
-                        allowFullScreen
-                      ></iframe>
+                     <iframe width="100%" height="100%" src={selectedEmbedUrl} title="Pitch Video" allowFullScreen></iframe>
                   </div>
 
-                  <div className="glass-card p-6 rounded-xl">
-                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-accent" /> Project Brief
-                    </h3>
-                    <p className="text-slate-300 text-sm leading-relaxed">{selectedEntry.projectDescription}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass-card p-6 rounded-xl">
+                      <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-accent" /> Project Brief
+                      </h3>
+                      <p className="text-slate-300 text-sm leading-relaxed line-clamp-6">{selectedEntry.projectDescription}</p>
+                    </div>
+                    {selectedEntry.pitchDeckLink && (
+                      <div className="glass-card p-6 rounded-xl border-accent/50 bg-accent/5">
+                        <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                          <Presentation className="w-4 h-4 text-accent" /> Pitch Deck Available
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-4 uppercase tracking-tighter">Finalist stage additional materials</p>
+                        <Button asChild className="w-full bg-accent/20 text-accent hover:bg-accent hover:text-white border border-accent/30">
+                          <a href={selectedEntry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
+                            Open Pitch Deck <Presentation className="ml-2 w-4 h-4" />
+                          </a>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -243,14 +255,13 @@ export default function JudgePage() {
                           value={[(scores as any)[crit.key]]} 
                           onValueChange={(val) => setScores({...scores, [crit.key]: val[0]})}
                         />
-                        <p className="text-[10px] text-muted-foreground italic leading-relaxed">{crit.desc}</p>
                       </div>
                     ))}
 
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-white">Final Thoughts</label>
                       <Textarea 
-                        placeholder="Log any additional observations here..." 
+                        placeholder="Log any observations here..." 
                         className="bg-black/20 border-white/10 h-24 text-sm"
                         value={scores.comment}
                         onChange={e => setScores({...scores, comment: e.target.value})}
@@ -269,8 +280,8 @@ export default function JudgePage() {
               <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
                 <AlertCircle className="w-10 h-10 text-accent" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Awaiting Selection</h2>
-              <p className="text-muted-foreground max-w-xs">Select a project to begin the decryption of its innovation.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Awaiting Mission Selection</h2>
+              <p className="text-muted-foreground max-w-xs">Select a project from the mission log to begin its decryption.</p>
             </div>
           )}
         </div>

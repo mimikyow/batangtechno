@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3 } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Link as LinkIcon, Save } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection, getDocs, setDoc } from "firebase/firestore";
+import { doc, collection, getDocs, setDoc, writeBatch } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
@@ -63,6 +63,7 @@ export default function AdminPage() {
 
   const [processingStatus, setProcessingStatus] = useState<"IDLE" | "CALCULATING" | "READY">("IDLE");
   const [rankedResults, setRankedResults] = useState<any[]>([]);
+  const [publishingType, setPublishingType] = useState<"TOP10" | "TOP3">("TOP10");
 
   const [newEntry, setNewEntry] = useState({
     teamName: "",
@@ -82,6 +83,8 @@ export default function AdminPage() {
     username: "",
     email: ""
   });
+
+  const [editingPitchLink, setEditingPitchLink] = useState<{id: string, url: string} | null>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -191,15 +194,17 @@ export default function AdminPage() {
     }
   };
 
-  const handleProcessLeaderboard = async () => {
+  const handleProcessLeaderboard = async (type: "TOP10" | "TOP3") => {
     if (!entries || entries.length === 0) return;
     
+    setPublishingType(type);
     setProcessingStatus("CALCULATING");
     
     try {
       const results = [];
+      const entriesToProcess = type === "TOP3" ? entries.filter(e => e.finalRank && e.finalRank <= 10) : entries;
       
-      for (const entry of entries) {
+      for (const entry of entriesToProcess) {
         const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
         const snapshot = await getDocs(scoresRef);
         
@@ -233,18 +238,53 @@ export default function AdminPage() {
     }
   };
 
-  const handleApplyRanks = () => {
-    rankedResults.slice(0, 10).forEach((res, index) => {
-      updateDocumentNonBlocking(doc(db, "entries", res.id), { finalRank: index + 1 });
-    });
-    
-    rankedResults.slice(10).forEach((res) => {
-      updateDocumentNonBlocking(doc(db, "entries", res.id), { finalRank: null });
-    });
+  const handleApplyRanks = async () => {
+    try {
+      const batch = writeBatch(db);
+      
+      if (publishingType === "TOP10") {
+        rankedResults.slice(0, 10).forEach((res, index) => {
+          const ref = doc(db, "entries", res.id);
+          batch.update(ref, { 
+            finalRank: index + 1,
+            top10Published: true
+          });
+        });
+        
+        rankedResults.slice(10).forEach((res) => {
+          const ref = doc(db, "entries", res.id);
+          batch.update(ref, { 
+            finalRank: null,
+            top10Published: false,
+            top3Published: false
+          });
+        });
+      } else {
+        rankedResults.slice(0, 3).forEach((res, index) => {
+          const ref = doc(db, "entries", res.id);
+          batch.update(ref, { 
+            finalRank: index + 1,
+            top3Published: true
+          });
+        });
+      }
 
-    setIsProcessing(false);
-    setProcessingStatus("IDLE");
-    toast({ title: "Leaderboard Published" });
+      await batch.commit();
+      setIsProcessing(false);
+      setProcessingStatus("IDLE");
+      toast({ title: publishingType === "TOP10" ? "Finalists Published" : "Winners Published" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Publication Failed" });
+    }
+  };
+
+  const handleSavePitchLink = (entryId: string) => {
+    if (!editingPitchLink) return;
+    updateDocumentNonBlocking(doc(db, "entries", entryId), {
+      pitchDeckLink: editingPitchLink.url
+    });
+    setEditingPitchLink(null);
+    toast({ title: "Pitch Deck Updated" });
   };
 
   const handleSaveEntry = () => {
@@ -261,7 +301,9 @@ export default function AdminPage() {
     addDocumentNonBlocking(collection(db, "entries"), {
       ...newEntry,
       submissionDate: new Date().toISOString(),
-      adminApproved: true
+      adminApproved: true,
+      top10Published: false,
+      top3Published: false
     });
 
     setIsAdding(false);
@@ -283,39 +325,6 @@ export default function AdminPage() {
   const handleDeleteEntry = (id: string) => {
     deleteDocumentNonBlocking(doc(db, "entries", id));
     toast({ title: "Entry Deleted" });
-  };
-
-  const handleUpdateRank = (id: string, rank: string) => {
-    const rankNum = rank === "NONE" ? null : parseInt(rank);
-    updateDocumentNonBlocking(doc(db, "entries", id), { finalRank: rankNum });
-  };
-
-  const addMemberField = () => {
-    if (newEntry.projectMembers.length < 5) {
-      setNewEntry({
-        ...newEntry,
-        projectMembers: [...newEntry.projectMembers, { name: "", school: "", schoolLogoUrl: "" }]
-      });
-    } else {
-      toast({ variant: "destructive", title: "Limit Reached", description: "Maximum 5 members per team." });
-    }
-  };
-
-  const removeMemberField = (index: number) => {
-    if (newEntry.projectMembers.length > 3) {
-      const updatedMembers = newEntry.projectMembers.filter((_, i) => i !== index);
-      setNewEntry({ ...newEntry, projectMembers: updatedMembers });
-    } else {
-      toast({ variant: "destructive", title: "Limit Reached", description: "Minimum 3 members required." });
-    }
-  };
-
-  const updateMember = (index: number, field: string, value: string) => {
-    const updatedMembers = newEntry.projectMembers.map((m, i) => {
-      if (i === index) return { ...m, [field]: value };
-      return m;
-    });
-    setNewEntry({ ...newEntry, projectMembers: updatedMembers });
   };
 
   return (
@@ -393,7 +402,7 @@ export default function AdminPage() {
                       type="button" 
                       variant="outline" 
                       size="sm" 
-                      onClick={addMemberField}
+                      onClick={() => setNewEntry({...newEntry, projectMembers: [...newEntry.projectMembers, { name: "", school: "", schoolLogoUrl: "" }]})}
                       disabled={newEntry.projectMembers.length >= 5}
                       className="h-7 text-[10px] uppercase tracking-tighter"
                     >
@@ -408,7 +417,7 @@ export default function AdminPage() {
                           variant="ghost" 
                           size="icon" 
                           className="absolute top-2 right-2 h-6 w-6 text-destructive" 
-                          onClick={() => removeMemberField(idx)}
+                          onClick={() => setNewEntry({...newEntry, projectMembers: newEntry.projectMembers.filter((_, i) => i !== idx)})}
                         >
                           <UserMinus className="w-4 h-4" />
                         </Button>
@@ -416,16 +425,28 @@ export default function AdminPage() {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-[9px] uppercase text-muted-foreground">Name</label>
-                          <Input className="h-8 text-sm" value={member.name} onChange={e => updateMember(idx, 'name', e.target.value)} />
+                          <Input className="h-8 text-sm" value={member.name} onChange={e => {
+                            const m = [...newEntry.projectMembers];
+                            m[idx].name = e.target.value;
+                            setNewEntry({...newEntry, projectMembers: m});
+                          }} />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[9px] uppercase text-muted-foreground">School</label>
-                          <Input className="h-8 text-sm" value={member.school} onChange={e => updateMember(idx, 'school', e.target.value)} />
+                          <Input className="h-8 text-sm" value={member.school} onChange={e => {
+                            const m = [...newEntry.projectMembers];
+                            m[idx].school = e.target.value;
+                            setNewEntry({...newEntry, projectMembers: m});
+                          }} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-[9px] uppercase text-muted-foreground">School Logo URL</label>
-                        <Input className="h-8 text-sm" value={member.schoolLogoUrl} onChange={e => updateMember(idx, 'schoolLogoUrl', e.target.value)} />
+                        <Input className="h-8 text-sm" value={member.schoolLogoUrl} onChange={e => {
+                          const m = [...newEntry.projectMembers];
+                          m[idx].schoolLogoUrl = e.target.value;
+                          setNewEntry({...newEntry, projectMembers: m});
+                        }} />
                       </div>
                     </div>
                   ))}
@@ -472,9 +493,17 @@ export default function AdminPage() {
               </DialogHeader>
               <div className="py-6">
                 {processingStatus === "IDLE" && (
-                  <div className="text-center py-12">
-                    <Trophy className="w-12 h-12 text-accent/20 mx-auto mb-4" />
-                    <Button onClick={handleProcessLeaderboard} className="bg-accent uppercase font-bold">Process Weighted Scores</Button>
+                  <div className="grid grid-cols-2 gap-4 text-center py-12">
+                    <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-accent/50 cursor-pointer transition-all" onClick={() => handleProcessLeaderboard("TOP10")}>
+                      <Presentation className="w-12 h-12 text-accent/50 mx-auto mb-4" />
+                      <h3 className="font-bold text-white mb-2">Publish Top 10</h3>
+                      <p className="text-[10px] text-muted-foreground uppercase">Initial Mission Phase</p>
+                    </div>
+                    <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-yellow-500/50 cursor-pointer transition-all" onClick={() => handleProcessLeaderboard("TOP3")}>
+                      <Trophy className="w-12 h-12 text-yellow-500/50 mx-auto mb-4" />
+                      <h3 className="font-bold text-white mb-2">Publish Top 3</h3>
+                      <p className="text-[10px] text-muted-foreground uppercase">Final Frontier Phase</p>
+                    </div>
                   </div>
                 )}
                 {processingStatus === "CALCULATING" && (
@@ -491,22 +520,22 @@ export default function AdminPage() {
                             <TableHead>Rank</TableHead>
                             <TableHead>Team</TableHead>
                             <TableHead>Avg Weighted</TableHead>
-                            <TableHead>Evals</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {rankedResults.slice(0, 10).map((res, i) => (
+                          {rankedResults.slice(0, publishingType === "TOP10" ? 10 : 3).map((res, i) => (
                             <TableRow key={res.id}>
                               <TableCell className="font-bold text-accent">#{i+1}</TableCell>
                               <TableCell>{res.teamName}</TableCell>
                               <TableCell>{res.avgScore}</TableCell>
-                              <TableCell>{res.submissionCount}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
                     </div>
-                    <Button onClick={handleApplyRanks} className="w-full bg-accent uppercase font-bold">Publish to Global Leaderboard</Button>
+                    <Button onClick={handleApplyRanks} className="w-full bg-accent uppercase font-bold">
+                      Publish {publishingType === "TOP10" ? "Stellar Finalists" : "Global Winners"}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -515,139 +544,132 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
-        <div className="xl:col-span-2 glass-card rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-white/10 bg-white/5">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Entries</h2>
-          </div>
-          <Table>
-            <TableHeader className="bg-white/5">
-              <TableRow>
-                <TableHead>Team</TableHead>
-                <TableHead>Challenge</TableHead>
-                <TableHead>Current Rank</TableHead>
-                <TableHead className="text-right">Manage</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {entries?.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
+      <div className="glass-card rounded-xl overflow-hidden mb-12">
+        <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+          <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Hackathon Command Log</h2>
+        </div>
+        <Table>
+          <TableHeader className="bg-white/5">
+            <TableRow>
+              <TableHead>Team Status</TableHead>
+              <TableHead>Challenge</TableHead>
+              <TableHead>Phase Access</TableHead>
+              <TableHead className="text-right">Manage</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries?.map((entry) => (
+              <TableRow key={entry.id}>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
                       <span className="font-bold text-white">{entry.teamName}</span>
-                      <span className="text-[10px] text-muted-foreground uppercase">
-                        {entry.projectMembers?.length > 0 ? entry.projectMembers[0].school : "No School"}
-                      </span>
+                      {entry.top10Published && <Badge className="bg-accent/20 text-accent text-[8px] h-4">Finalist</Badge>}
+                      {entry.top3Published && <Badge className="bg-yellow-500/20 text-yellow-500 text-[8px] h-4">Winner</Badge>}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-[9px] border-white/20">{entry.challengeId}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Select defaultValue={entry.finalRank?.toString() || "NONE"} onValueChange={(val) => handleUpdateRank(entry.id, val)}>
-                      <SelectTrigger className="w-24 h-8 text-[10px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NONE">Unranked</SelectItem>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(r => (
-                          <SelectItem key={r} value={r.toString()}>{r}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => handleViewScores(entry)} className="text-accent">
-                            <BarChart3 className="w-4 h-4" />
+                    <span className="text-[10px] text-muted-foreground uppercase">
+                      {entry.projectMembers?.[0]?.school || "No School"}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-[9px] border-white/20">{entry.challengeId}</Badge>
+                </TableCell>
+                <TableCell>
+                  {entry.top10Published ? (
+                    <div className="flex items-center gap-2">
+                      {editingPitchLink?.id === entry.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            className="h-7 text-[10px] w-48" 
+                            placeholder="Pitch Deck URL" 
+                            value={editingPitchLink.url}
+                            onChange={e => setEditingPitchLink({...editingPitchLink, url: e.target.value})}
+                          />
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-accent" onClick={() => handleSavePitchLink(entry.id)}>
+                            <Save className="w-3.5 h-3.5" />
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl bg-card border-border">
-                          <DialogHeader>
-                            <DialogTitle className="text-2xl font-bold uppercase italic flex items-center gap-3">
-                              Score Breakdown: {entry.teamName}
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="py-6">
-                            {isLoadingScores ? (
-                              <div className="h-64 flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-accent animate-spin" />
-                              </div>
-                            ) : entryScores.length === 0 ? (
-                              <div className="h-64 flex flex-col items-center justify-center text-muted-foreground italic border-2 border-dashed border-white/5 rounded-xl">
-                                No judge evaluations recorded yet.
-                              </div>
-                            ) : (
-                              <ScrollArea className="h-[50vh]">
-                                <div className="space-y-6 pr-4">
-                                  {entryScores.map((score, idx) => (
-                                    <div key={idx} className="p-6 bg-white/5 rounded-xl border border-white/10 space-y-4">
-                                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                                        <div className="font-bold text-accent uppercase tracking-widest text-sm">{score.judgeName}</div>
-                                        <Badge variant="outline" className="text-[10px] border-white/20">
-                                          {new Date(score.submissionDate).toLocaleDateString()}
-                                        </Badge>
-                                      </div>
-                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="p-3 bg-black/20 rounded-lg text-center">
-                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Mastery</div>
-                                          <div className="text-xl font-bold text-white">{score.scores?.mastery || 0}</div>
-                                        </div>
-                                        <div className="p-3 bg-black/20 rounded-lg text-center">
-                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Innovation</div>
-                                          <div className="text-xl font-bold text-white">{score.scores?.innovation || 0}</div>
-                                        </div>
-                                        <div className="p-3 bg-black/20 rounded-lg text-center">
-                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Impact</div>
-                                          <div className="text-xl font-bold text-white">{score.scores?.impact || 0}</div>
-                                        </div>
-                                        <div className="p-3 bg-black/20 rounded-lg text-center">
-                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Compliance</div>
-                                          <div className="text-xl font-bold text-white">{score.scores?.compliance || 0}</div>
-                                        </div>
-                                      </div>
-                                      {score.comment && (
-                                        <div className="p-4 bg-black/40 rounded-lg">
-                                          <div className="text-[9px] uppercase text-accent font-bold mb-2">Judge's Comment</div>
-                                          <p className="text-xs text-slate-300 italic">"{score.comment}"</p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </ScrollArea>
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
+                        </div>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 text-[9px] uppercase border-accent/30 text-accent hover:bg-accent/10"
+                          onClick={() => setEditingPitchLink({id: entry.id, url: entry.pitchDeckLink || ""})}
+                        >
+                          <Presentation className="w-3 h-3 mr-1" /> 
+                          {entry.pitchDeckLink ? "Update Pitch" : "Add Pitch Deck"}
+                        </Button>
+                      )}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="glass-card rounded-xl overflow-hidden h-fit">
-          <div className="p-4 border-b border-white/10 bg-white/5">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Judges</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            {judges?.map((judge) => (
-              <div key={judge.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
-                <div>
-                  <div className="font-bold text-sm text-white">{judge.name}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-tighter">@{judge.username}</div>
-                </div>
-                <Badge className="bg-accent/20 text-accent border-accent/20 text-[9px]">{judge.email}</Badge>
-              </div>
+                  ) : (
+                    <span className="text-[9px] text-muted-foreground uppercase italic">Pending Finalist Status</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleViewScores(entry)} className="text-accent">
+                      <BarChart3 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))}
-          </div>
-        </div>
+          </TableBody>
+        </Table>
       </div>
+
+      <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
+        <DialogContent className="max-w-4xl bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold uppercase italic">
+              Score Breakdown: {viewingEntry?.teamName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-6">
+            {isLoadingScores ? (
+              <div className="h-64 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-accent animate-spin" />
+              </div>
+            ) : entryScores.length === 0 ? (
+              <div className="h-64 flex flex-col items-center justify-center text-muted-foreground italic border-2 border-dashed border-white/5 rounded-xl">
+                No evaluations recorded.
+              </div>
+            ) : (
+              <ScrollArea className="h-[50vh]">
+                <div className="space-y-6 pr-4">
+                  {entryScores.map((score, idx) => (
+                    <div key={idx} className="p-6 bg-white/5 rounded-xl border border-white/10 space-y-4">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                        <div className="font-bold text-accent uppercase tracking-widest text-sm">{score.judgeName}</div>
+                        <Badge variant="outline" className="text-[10px] border-white/20">
+                          {new Date(score.submissionDate).toLocaleDateString()}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {['mastery', 'innovation', 'impact', 'compliance'].map(key => (
+                          <div key={key} className="p-3 bg-black/20 rounded-lg text-center">
+                            <div className="text-[9px] uppercase text-muted-foreground mb-1">{key}</div>
+                            <div className="text-xl font-bold text-white">{score.scores?.[key] || 0}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {score.comment && (
+                        <div className="p-4 bg-black/40 rounded-lg">
+                          <p className="text-xs text-slate-300 italic">"{score.comment}"</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
