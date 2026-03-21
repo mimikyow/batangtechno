@@ -207,14 +207,9 @@ export default function JudgePage() {
                      <iframe width="100%" height="100%" src={selectedEmbedUrl} title="Pitch Video" allowFullScreen></iframe>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="glass-card p-6 rounded-xl">
-                      <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                        <Info className="w-4 h-4 text-accent" /> Project Brief
-                      </h3>
-                      <p className="text-slate-300 text-sm leading-relaxed line-clamp-6">{selectedEntry.projectDescription}</p>
-                    </div>
-                    <div className="space-y-4">
+                  <div className="space-y-6">
+                    {/* Source Code and Pitch Deck Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {selectedEntry.githubLink && (
                         <div className="glass-card p-6 rounded-xl border-accent/30">
                           <h3 className="text-white font-bold mb-2 flex items-center gap-2">
@@ -239,6 +234,14 @@ export default function JudgePage() {
                           </Button>
                         </div>
                       )}
+                    </div>
+
+                    {/* Project Brief Section - Moved below links for better vertical space */}
+                    <div className="glass-card p-6 rounded-xl">
+                      <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-accent" /> Project Brief
+                      </h3>
+                      <p className="text-slate-300 text-sm leading-relaxed">{selectedEntry.projectDescription}</p>
                     </div>
                   </div>
                 </div>
