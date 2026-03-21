@@ -66,7 +66,7 @@ export default function Home() {
           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-4 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
-          <p className="text-xs sm:text-lg md:text-xl text-slate-400 font-light max-w-4xl mx-auto leading-relaxed tracking-[0.1em] sm:tracking-[0.3em] px-4">
+          <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-light max-w-4xl mx-auto leading-relaxed tracking-[0.1em] sm:tracking-[0.3em] px-4">
             Building the Minds of Tomorrow's Innovators
           </p>
           <div className="mt-8 sm:mt-12 animate-bounce">
@@ -79,12 +79,12 @@ export default function Home() {
       <section className="container mx-auto px-4 py-16 sm:py-24">
         <Tabs defaultValue="all" className="w-full">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-12 sm:mb-16 gap-8">
-            <div>
+            <div className="text-center xl:text-left">
               <h2 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tighter">Hackathon Challenge</h2>
               <p className="text-muted-foreground uppercase text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.4em] font-bold">entries that innovate to elevate</p>
             </div>
             
-            <TabsList className="bg-white/5 border border-white/10 p-1 h-auto flex flex-wrap gap-1 justify-start">
+            <TabsList className="bg-white/5 border border-white/10 p-1 h-auto flex flex-wrap gap-1 justify-center xl:justify-start">
               <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-4 sm:px-6 py-2 uppercase text-[9px] sm:text-[10px] font-black tracking-widest flex-1 sm:flex-none">
                 <Rocket className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> All Missions
               </TabsTrigger>
