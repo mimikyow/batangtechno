@@ -71,35 +71,21 @@
         "description"
       ]
     },
-    "JudgingCriterion": {
+    "ProgrammingWinner": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "JudgingCriterion",
+      "title": "ProgrammingWinner",
       "type": "object",
-      "description": "Defines a specific criterion that judges use to evaluate hackathon entries.",
+      "description": "Represents a winner of the programming challenge.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the JudgingCriterion entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the judging criterion (e.g., 'Innovation', 'Technical Feasibility', 'Impact')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed explanation of what this criterion evaluates."
-        },
-        "maxScore": {
-          "type": "number",
-          "description": "The maximum score attainable for this specific criterion."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "school": { "type": "string" },
+        "pictureUrl": { "type": "string", "format": "uri" },
+        "schoolLogoUrl": { "type": "string", "format": "uri" },
+        "place": { "type": "number", "enum": [1, 2, 3] },
+        "category": { "type": "string", "enum": ["HIGH_SCHOOL", "COLLEGE"] }
       },
-      "required": [
-        "id",
-        "name",
-        "description",
-        "maxScore"
-      ]
+      "required": ["id", "name", "school", "pictureUrl", "schoolLogoUrl", "place", "category"]
     },
     "Entry": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -194,83 +180,6 @@
         "submissionDate",
         "adminApproved"
       ]
-    },
-    "JudgeAssignment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "JudgeAssignment",
-      "type": "object",
-      "description": "Links a specific judge to an entry.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier."
-        },
-        "judgeId": {
-          "type": "string",
-          "description": "Reference to the User entity."
-        },
-        "entryId": {
-          "type": "string",
-          "description": "Reference to the Entry entity."
-        },
-        "assignedDate": {
-          "type": "string",
-          "description": "Date of assignment.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "judgeId",
-        "entryId",
-        "assignedDate"
-      ]
-    },
-    "ScoreSubmission": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ScoreSubmission",
-      "type": "object",
-      "description": "Records a judge's score.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier."
-        },
-        "judgeId": {
-          "type": "string",
-          "description": "Reference to the User entity."
-        },
-        "entryId": {
-          "type": "string",
-          "description": "Reference to the Entry entity."
-        },
-        "criterionId": {
-          "type": "string",
-          "description": "Reference to the JudgingCriterion."
-        },
-        "scoreValue": {
-          "type": "number",
-          "description": "The score given."
-        },
-        "submissionDate": {
-          "type": "string",
-          "description": "Date of submission.",
-          "format": "date-time"
-        },
-        "adminUploaded": {
-          "type": "boolean",
-          "description": "Indicates if processed by an admin."
-        }
-      },
-      "required": [
-        "id",
-        "judgeId",
-        "entryId",
-        "criterionId",
-        "scoreValue",
-        "submissionDate",
-        "adminUploaded"
-      ]
     }
   },
   "auth": {
@@ -345,17 +254,17 @@
         }
       },
       {
-        "path": "/criteria/{criterionId}",
+        "path": "/programming_winners/{winnerId}",
         "definition": {
-          "entityName": "JudgingCriterion",
+          "entityName": "ProgrammingWinner",
           "schema": {
-            "$ref": "#/backend/entities/JudgingCriterion"
+            "$ref": "#/backend/entities/ProgrammingWinner"
           },
-          "description": "Defines the judging criteria.",
+          "description": "Stores winners of the programming challenge.",
           "params": [
             {
-              "name": "criterionId",
-              "description": "The unique ID of the judging criterion."
+              "name": "winnerId",
+              "description": "The unique ID of the winner."
             }
           ]
         }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Link as LinkIcon, Save, Github } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +37,12 @@ export default function AdminPage() {
   const judgesQuery = useMemoFirebase(() => collection(db, "roles_judge"), [db]);
   const { data: judges } = useCollection(judgesQuery);
 
+  const progWinnersQuery = useMemoFirebase(() => collection(db, "programming_winners"), [db]);
+  const { data: progWinners } = useCollection(progWinnersQuery);
+
   const [isAdding, setIsAdding] = useState(false);
   const [isAddingJudge, setIsAddingJudge] = useState(false);
+  const [isAddingProgWinner, setIsAddingProgWinner] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [viewingEntry, setViewingEntry] = useState<any>(null);
@@ -66,6 +71,15 @@ export default function AdminPage() {
     name: "",
     username: "",
     email: ""
+  });
+
+  const [newProgWinner, setNewProgWinner] = useState({
+    name: "",
+    school: "",
+    pictureUrl: "",
+    schoolLogoUrl: "",
+    place: 1 as 1 | 2 | 3,
+    category: "COLLEGE" as "HIGH_SCHOOL" | "COLLEGE"
   });
 
   const [editingPitchLink, setEditingPitchLink] = useState<{id: string, url: string} | null>(null);
@@ -176,6 +190,34 @@ export default function AdminPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: "Creation Failed", description: error.message });
     }
+  };
+
+  const handleAddProgWinner = () => {
+    if (!newProgWinner.name || !newProgWinner.school || !newProgWinner.pictureUrl || !newProgWinner.schoolLogoUrl) {
+      toast({ variant: "destructive", title: "Incomplete Fields", description: "All fields are required." });
+      return;
+    }
+
+    addDocumentNonBlocking(collection(db, "programming_winners"), {
+      ...newProgWinner,
+      dateAdded: new Date().toISOString()
+    });
+
+    setIsAddingProgWinner(false);
+    setNewProgWinner({
+      name: "",
+      school: "",
+      pictureUrl: "",
+      schoolLogoUrl: "",
+      place: 1,
+      category: "COLLEGE"
+    });
+    toast({ title: "Programming Winner Deployed" });
+  };
+
+  const handleDeleteProgWinner = (id: string) => {
+    deleteDocumentNonBlocking(doc(db, "programming_winners", id));
+    toast({ title: "Winner Record Deleted" });
   };
 
   const handleProcessLeaderboard = async (type: "TOP10" | "TOP3") => {
@@ -312,6 +354,10 @@ export default function AdminPage() {
     toast({ title: "Entry Deleted" });
   };
 
+  const isPlaceTaken = (cat: "HIGH_SCHOOL" | "COLLEGE", place: number) => {
+    return progWinners?.some(w => w.category === cat && w.place === place);
+  };
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
@@ -333,6 +379,85 @@ export default function AdminPage() {
         </div>
         
         <div className="flex flex-wrap gap-4">
+          <Dialog open={isAddingProgWinner} onOpenChange={setIsAddingProgWinner}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 hover:text-white uppercase text-xs font-bold tracking-widest">
+                <Medal className="w-4 h-4 mr-2" /> Programming Elite
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border overflow-y-auto max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold uppercase italic">Manage Programming Elite</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-4 border-b border-white/10 pb-6">
+                  <h4 className="text-[10px] font-bold uppercase text-accent tracking-widest">Assign New Winner</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase text-muted-foreground">Name</label>
+                      <Input value={newProgWinner.name} onChange={e => setNewProgWinner({...newProgWinner, name: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase text-muted-foreground">School</label>
+                      <Input value={newProgWinner.school} onChange={e => setNewProgWinner({...newProgWinner, school: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase text-muted-foreground">Profile Picture URL</label>
+                    <Input value={newProgWinner.pictureUrl} onChange={e => setNewProgWinner({...newProgWinner, pictureUrl: e.target.value})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase text-muted-foreground">School Logo URL</label>
+                    <Input value={newProgWinner.schoolLogoUrl} onChange={e => setNewProgWinner({...newProgWinner, schoolLogoUrl: e.target.value})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase text-muted-foreground">Category</label>
+                      <Select value={newProgWinner.category} onValueChange={(v: any) => setNewProgWinner({...newProgWinner, category: v})}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HIGH_SCHOOL">High School</SelectItem>
+                          <SelectItem value="COLLEGE">College</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase text-muted-foreground">Place</label>
+                      <Select value={newProgWinner.place.toString()} onValueChange={(v) => setNewProgWinner({...newProgWinner, place: parseInt(v) as 1|2|3})}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1" disabled={isPlaceTaken(newProgWinner.category, 1)}>1st Place</SelectItem>
+                          <SelectItem value="2" disabled={isPlaceTaken(newProgWinner.category, 2)}>2nd Place</SelectItem>
+                          <SelectItem value="3" disabled={isPlaceTaken(newProgWinner.category, 3)}>3rd Place</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-accent uppercase text-xs font-bold" onClick={handleAddProgWinner}>Add Winner</Button>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-bold uppercase text-accent tracking-widest">Active Records</h4>
+                  <ScrollArea className="h-48">
+                    <div className="space-y-2">
+                      {progWinners?.map(w => (
+                        <div key={w.id} className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/5">
+                          <div>
+                            <div className="text-xs font-bold text-white">{w.name} <span className="text-[9px] text-accent ml-2">#{w.place} ({w.category === 'COLLEGE' ? 'College' : 'HS'})</span></div>
+                            <div className="text-[9px] text-muted-foreground uppercase">{w.school}</div>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteProgWinner(w.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isAddingJudge} onOpenChange={setIsAddingJudge}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 hover:text-white uppercase text-xs font-bold tracking-widest">

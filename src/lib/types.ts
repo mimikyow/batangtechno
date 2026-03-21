@@ -32,6 +32,16 @@ export interface HackathonEntry {
   overallScore?: number;
 }
 
+export interface ProgrammingWinner {
+  id: string;
+  name: string;
+  school: string;
+  pictureUrl: string;
+  schoolLogoUrl: string;
+  place: 1 | 2 | 3;
+  category: "HIGH_SCHOOL" | "COLLEGE";
+}
+
 export interface ScoreCriteria {
   mastery: number;
   innovation: number;

@@ -3,11 +3,12 @@
 
 import { TopThree } from "@/components/viewer/TopThree";
 import { EntryCard } from "@/components/viewer/EntryCard";
+import { ProgrammingElite } from "@/components/viewer/ProgrammingElite";
 import { CHALLENGES } from "@/lib/constants";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter, Loader2, Trophy, Rocket, Star } from "lucide-react";
+import { Search, Filter, Loader2, Trophy, Rocket, Star, Code } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import Image from "next/image";
@@ -25,6 +26,9 @@ export default function Home() {
   }, [db]);
   
   const { data: entries, isLoading } = useCollection(entriesQuery);
+
+  const progWinnersQuery = useMemoFirebase(() => collection(db, "programming_winners"), [db]);
+  const { data: progWinners, isLoading: isProgLoading } = useCollection(progWinnersQuery);
 
   const filteredEntries = (entries || []).filter(entry => {
     const matchesSearch = entry.teamName.toLowerCase().includes(search.toLowerCase()) || 
@@ -76,15 +80,18 @@ export default function Home() {
               <p className="text-muted-foreground uppercase text-xs tracking-widest">The constellation of submissions</p>
             </div>
             
-            <TabsList className="bg-white/5 border border-white/10 p-1 h-12 flex-wrap">
-              <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-6 uppercase text-[10px] font-bold">
+            <TabsList className="bg-white/5 border border-white/10 p-1 h-auto flex-wrap gap-1">
+              <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-4 py-2 uppercase text-[10px] font-bold">
                 <Rocket className="w-3.5 h-3.5" /> All Missions
               </TabsTrigger>
-              <TabsTrigger value="finalists" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white gap-2 px-6 uppercase text-[10px] font-bold">
+              <TabsTrigger value="finalists" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white gap-2 px-4 py-2 uppercase text-[10px] font-bold">
                 <Star className="w-3.5 h-3.5" /> Stellar Finalists
               </TabsTrigger>
-              <TabsTrigger value="winners" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white gap-2 px-6 uppercase text-[10px] font-bold">
+              <TabsTrigger value="winners" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white gap-2 px-4 py-2 uppercase text-[10px] font-bold">
                 <Trophy className="w-3.5 h-3.5" /> Final Frontiers
+              </TabsTrigger>
+              <TabsTrigger value="programming" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white gap-2 px-4 py-2 uppercase text-[10px] font-bold">
+                <Code className="w-3.5 h-3.5" /> Programming Elite
               </TabsTrigger>
             </TabsList>
           </div>
@@ -174,6 +181,24 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-white mb-2 uppercase italic">Final Frontiers Locked</h3>
                 <p className="text-muted-foreground max-w-xs mx-auto italic text-xs">
                   The ultimate winners will be revealed after the final evaluation.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="programming" className="mt-0">
+            {isProgLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+              </div>
+            ) : progWinners && progWinners.length > 0 ? (
+              <ProgrammingElite winners={progWinners} />
+            ) : (
+              <div className="py-20 text-center glass-card rounded-2xl border-dashed">
+                <Code className="w-12 h-12 text-purple-500/20 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2 uppercase italic">Elite Coders Pending</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto italic text-xs">
+                  The results of the programming challenge are being finalized.
                 </p>
               </div>
             )}
