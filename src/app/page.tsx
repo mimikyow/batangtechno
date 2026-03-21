@@ -28,7 +28,7 @@ export default function Home() {
 
   const filteredEntries = (entries || []).filter(entry => {
     const matchesSearch = entry.teamName.toLowerCase().includes(search.toLowerCase()) || 
-                          entry.projectSchool.toLowerCase().includes(search.toLowerCase());
+                          entry.projectMembers?.some((m: any) => m.school.toLowerCase().includes(search.toLowerCase()));
     const matchesFilter = filter === "ALL" || entry.challengeId === filter;
     return matchesSearch && matchesFilter;
   });

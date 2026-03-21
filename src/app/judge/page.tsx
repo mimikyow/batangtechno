@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection, query, where, collectionGroup, getDocs } from "firebase/firestore";
+import { doc, collection, query, where, collectionGroup } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -43,7 +43,7 @@ const CRITERIA = [
 ];
 
 export default function JudgePage() {
-  const { user, isUserLoading } = user ? useUser() : { user: null, isUserLoading: true };
+  const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
