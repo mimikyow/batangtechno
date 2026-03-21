@@ -57,7 +57,7 @@ export function Navbar() {
               />
             )}
           </div>
-          <span className="font-bold text-xl tracking-tight glow-accent text-white uppercase">
+          <span className="font-bold text-xl tracking-tight glow-accent text-white">
             CICS – SC Alangilan
           </span>
         </Link>
