@@ -60,10 +60,10 @@ export function EntryCard({ entry }: EntryCardProps) {
           data-ai-hint="project thumbnail"
         />
 
-        {/* Branding Logo - Centered in Thumbnail */}
+        {/* Branding Logo - Centered and High Visibility */}
         {logo && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-20 group-hover:opacity-40 transition-opacity">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-transform duration-500 group-hover:scale-110">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] opacity-90 group-hover:opacity-100 transition-opacity">
               <Image 
                 src={logo.imageUrl} 
                 alt="Batang Techno Branding" 
