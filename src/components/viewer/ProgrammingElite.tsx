@@ -102,10 +102,10 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
              <Code className="w-8 h-8 text-purple-500" />
            </div>
         </div>
-        <h2 className="text-5xl font-black text-white italic tracking-tighter glow-accent">
-          Programming <span className="text-purple-500">Elite</span>
+        <h2 className="text-4xl font-black text-white mb-2 tracking-tighter">
+          Programming Challenge
         </h2>
-        <p className="text-muted-foreground uppercase text-xs tracking-[0.3em]">The Algorithmic Architects of Alangilan</p>
+        <p className="text-muted-foreground uppercase text-[10px] tracking-[0.4em] font-bold">The Algorithmic Architects of Alangilan</p>
       </div>
 
       <div className="space-y-32">

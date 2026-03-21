@@ -81,7 +81,7 @@ export default function Home() {
         <Tabs defaultValue="all" className="w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-16 gap-8">
             <div>
-              <h2 className="text-4xl font-black text-white mb-2 tracking-tighter">Hackathon challenge</h2>
+              <h2 className="text-4xl font-black text-white mb-2 tracking-tighter">Hackathon Challenge</h2>
               <p className="text-muted-foreground uppercase text-[10px] tracking-[0.4em] font-bold">entries that innovate to elevate</p>
             </div>
             
