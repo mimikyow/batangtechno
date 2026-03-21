@@ -17,6 +17,7 @@ import { getPlaceholderImage } from "@/lib/placeholder-images";
 export default function Home() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
+  const [progCategory, setProgCategory] = useState("ALL");
   const db = useFirestore();
 
   const logo = getPlaceholderImage("hero-logo");
@@ -35,6 +36,10 @@ export default function Home() {
                           entry.projectMembers?.some((m: any) => m.school.toLowerCase().includes(search.toLowerCase()));
     const matchesFilter = filter === "ALL" || entry.challengeId === filter;
     return matchesSearch && matchesFilter;
+  });
+
+  const filteredProgWinners = (progWinners || []).filter(winner => {
+    return progCategory === "ALL" || winner.category === progCategory;
   });
 
   const finalists = (entries || []).filter(e => e.top10Published).sort((a, b) => (a.finalRank || 0) - (b.finalRank || 0));
@@ -191,18 +196,44 @@ export default function Home() {
         </Tabs>
       </section>
 
-      {/* Programming Elite Section - Standalone */}
+      {/* Programming Challenge Section */}
       <section className="bg-black/40 border-t border-white/5 py-32">
         <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center text-center mb-16 space-y-4">
+            <div className="flex justify-center">
+              <div className="bg-purple-500/10 p-4 rounded-full border border-purple-500/20 animate-pulse">
+                <Code className="w-8 h-8 text-purple-500" />
+              </div>
+            </div>
+            <h2 className="text-4xl font-black text-white tracking-tighter">Programming Challenge</h2>
+            <p className="text-muted-foreground uppercase text-[10px] tracking-[0.4em] font-bold">CODING EXCELLENCE IN DISPLAY</p>
+            
+            <div className="w-full max-w-xs mt-8">
+              <Select value={progCategory} onValueChange={setProgCategory}>
+                <SelectTrigger className="bg-secondary/30 border-white/10 h-12 text-[10px] uppercase font-black tracking-widest text-white">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-3.5 h-3.5 text-purple-500" />
+                    <SelectValue placeholder="All Divisions" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border text-white">
+                  <SelectItem value="ALL">All Divisions</SelectItem>
+                  <SelectItem value="HIGH_SCHOOL">High School</SelectItem>
+                  <SelectItem value="COLLEGE">College</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {isProgLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-6">
               <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
               <p className="text-muted-foreground uppercase text-[10px] tracking-[0.5em] font-bold">Accessing Elite Records...</p>
             </div>
-          ) : progWinners && progWinners.length > 0 ? (
-            <ProgrammingElite winners={progWinners} />
+          ) : filteredProgWinners.length > 0 ? (
+            <ProgrammingElite winners={filteredProgWinners} />
           ) : (
-            <div className="text-center py-20">
+            <div className="text-center py-20 glass-card rounded-3xl border-dashed border-2 flex flex-col items-center justify-center">
                <div className="flex justify-center mb-6">
                 <div className="bg-purple-500/10 p-4 rounded-full border border-purple-500/20">
                   <Code className="w-8 h-8 text-purple-500/20" />

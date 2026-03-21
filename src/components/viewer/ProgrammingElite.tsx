@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Trophy, Medal, Star, Code } from "lucide-react";
+import { Trophy, Medal, Star } from "lucide-react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { ProgrammingWinner } from "@/lib/types";
@@ -31,7 +31,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
 
     return (
       <div className="space-y-12">
-        <h3 className="text-2xl font-black text-white uppercase italic text-center tracking-widest border-b border-white/10 pb-4">
+        <h3 className="text-2xl font-black text-white uppercase tracking-widest text-center border-b border-white/10 pb-4">
           {title}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
@@ -95,23 +95,11 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
   };
 
   return (
-    <section className="py-12 space-y-24">
-      <div className="text-center space-y-4">
-        <div className="flex justify-center">
-           <div className="bg-purple-500/10 p-4 rounded-full border border-purple-500/20 animate-pulse">
-             <Code className="w-8 h-8 text-purple-500" />
-           </div>
-        </div>
-        <h2 className="text-4xl font-black text-white mb-2 tracking-tighter">
-          Programming Challenge
-        </h2>
-        <p className="text-muted-foreground uppercase text-[10px] tracking-[0.4em] font-bold">The Algorithmic Architects of Alangilan</p>
-      </div>
-
+    <div className="py-12 space-y-24">
       <div className="space-y-32">
         {renderPodium(collegeWinners, "College Division")}
         {renderPodium(hsWinners, "Senior High School Division")}
       </div>
-    </section>
+    </div>
   );
 }
