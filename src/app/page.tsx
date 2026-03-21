@@ -1,4 +1,3 @@
-
 "use client";
 
 import { TopThree } from "@/components/viewer/TopThree";
@@ -43,7 +42,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[65vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden border-b border-white/5">
+      <section className="relative min-h-[65vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden border-b border-white/5 py-12">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background to-background z-10" />
           <div className="star-twinkle absolute top-20 left-1/4 w-1 h-1 bg-white rounded-full" />
@@ -51,9 +50,9 @@ export default function Home() {
           <div className="star-twinkle absolute bottom-20 right-1/4 w-1 h-1 bg-white rounded-full" />
         </div>
         
-        <div className="relative z-20 max-w-5xl mx-auto flex flex-col items-center pt-12">
+        <div className="relative z-20 w-full max-w-5xl mx-auto flex flex-col items-center pt-8">
           {logo && (
-            <div className="mb-6 relative w-24 h-24 sm:w-36 sm:h-36">
+            <div className="mb-6 relative w-20 h-20 sm:w-36 sm:h-36">
               <Image 
                 src={logo.imageUrl}
                 alt={logo.description}
@@ -67,7 +66,7 @@ export default function Home() {
           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-4 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
-          <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-light max-w-none mx-auto leading-relaxed tracking-[0.2em] sm:tracking-[0.3em] px-4 whitespace-nowrap">
+          <p className="text-xs sm:text-lg md:text-xl text-slate-400 font-light max-w-4xl mx-auto leading-relaxed tracking-[0.1em] sm:tracking-[0.3em] px-4">
             Building the Minds of Tomorrow's Innovators
           </p>
           <div className="mt-8 sm:mt-12 animate-bounce">
