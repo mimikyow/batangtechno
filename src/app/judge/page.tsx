@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, arrayUnion } from "firebase/firestore";
@@ -134,9 +134,6 @@ export default function JudgePage() {
   };
 
   const isJudged = (entryId: string) => {
-    // If it's a finalist (Top 10 published), we might allow re-judging for the pitch deck round.
-    // However, for simplicity per the request "disable it from being clicked", we'll check status.
-    // To allow "separate judging", we could clear this flag from Admin, but here we'll follow "disable it".
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
@@ -217,19 +214,32 @@ export default function JudgePage() {
                       </h3>
                       <p className="text-slate-300 text-sm leading-relaxed line-clamp-6">{selectedEntry.projectDescription}</p>
                     </div>
-                    {selectedEntry.pitchDeckLink && (
-                      <div className="glass-card p-6 rounded-xl border-accent/50 bg-accent/5">
-                        <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                          <Presentation className="w-4 h-4 text-accent" /> Pitch Deck Available
-                        </h3>
-                        <p className="text-xs text-muted-foreground mb-4 uppercase tracking-tighter">Finalist stage additional materials</p>
-                        <Button asChild className="w-full bg-accent/20 text-accent hover:bg-accent hover:text-white border border-accent/30">
-                          <a href={selectedEntry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
-                            Open Pitch Deck <Presentation className="ml-2 w-4 h-4" />
-                          </a>
-                        </Button>
-                      </div>
-                    )}
+                    <div className="space-y-4">
+                      {selectedEntry.githubLink && (
+                        <div className="glass-card p-6 rounded-xl border-accent/30">
+                          <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                            <Github className="w-4 h-4 text-accent" /> Source Code
+                          </h3>
+                          <Button asChild className="w-full bg-accent/10 text-accent hover:bg-accent hover:text-white border border-accent/20">
+                            <a href={selectedEntry.githubLink} target="_blank" rel="noopener noreferrer">
+                              Explore Repository <Github className="ml-2 w-4 h-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                      {selectedEntry.pitchDeckLink && (
+                        <div className="glass-card p-6 rounded-xl border-accent/50 bg-accent/5">
+                          <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                            <Presentation className="w-4 h-4 text-accent" /> Pitch Deck Available
+                          </h3>
+                          <Button asChild className="w-full bg-accent/20 text-accent hover:bg-accent hover:text-white border border-accent/30">
+                            <a href={selectedEntry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
+                              Open Pitch Deck <Presentation className="ml-2 w-4 h-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

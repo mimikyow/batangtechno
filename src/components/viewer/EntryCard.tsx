@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, Users, School, Globe, Presentation, FileText } from "lucide-react";
+import { PlayCircle, Users, School, Globe, Presentation, FileText, Github } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getGoogleDriveEmbedUrl, getGoogleDriveImageUrl } from "@/lib/utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
@@ -21,6 +21,7 @@ interface EntryCardProps {
     teamName: string;
     projectDescription: string;
     googleDriveVideoLink: string;
+    githubLink?: string;
     thumbnailImageUrl: string;
     challengeId: string;
     projectMembers: ProjectMember[];
@@ -156,16 +157,28 @@ export function EntryCard({ entry }: EntryCardProps) {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    {entry.pitchDeckLink && (
-                      <div>
-                        <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Finalist Payload</h4>
-                        <Button asChild variant="outline" className="w-full border-accent/30 text-accent hover:bg-accent/10 h-8 text-[10px] uppercase font-bold">
-                          <a href={entry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
-                            <FileText className="w-3 h-3 mr-2" /> View Pitch Deck
-                          </a>
-                        </Button>
-                      </div>
-                    )}
+                    <div className="grid grid-cols-1 gap-2">
+                      {entry.githubLink && (
+                        <div>
+                          <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Source Control</h4>
+                          <Button asChild variant="outline" className="w-full border-accent/30 text-accent hover:bg-accent/10 h-8 text-[10px] uppercase font-bold">
+                            <a href={entry.githubLink} target="_blank" rel="noopener noreferrer">
+                              <Github className="w-3 h-3 mr-2" /> GitHub Repo
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                      {entry.pitchDeckLink && (
+                        <div>
+                          <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Finalist Payload</h4>
+                          <Button asChild variant="outline" className="w-full border-accent/30 text-accent hover:bg-accent/10 h-8 text-[10px] uppercase font-bold">
+                            <a href={entry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
+                              <FileText className="w-3 h-3 mr-2" /> View Pitch Deck
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Crew Members</h4>
                       <div className="space-y-2">

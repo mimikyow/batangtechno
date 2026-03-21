@@ -133,6 +133,11 @@
           "description": "A Google Drive link to the project's video presentation.",
           "format": "uri"
         },
+        "githubLink": {
+          "type": "string",
+          "description": "A link to the project's GitHub repository.",
+          "format": "uri"
+        },
         "thumbnailImageUrl": {
           "type": "string",
           "description": "A URL to an image file used as a thumbnail.",
@@ -182,6 +187,7 @@
         "teamName",
         "projectMembers",
         "googleDriveVideoLink",
+        "githubLink",
         "thumbnailImageUrl",
         "projectDescription",
         "challengeId",

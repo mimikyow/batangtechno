@@ -8,34 +8,43 @@ export type Challenge =
   | "SUSTAINABLE AGRICULTURE";
 
 export interface ProjectMember {
-  id: string;
+  id?: string;
   name: string;
+  school: string;
+  schoolLogoUrl?: string;
 }
 
 export interface HackathonEntry {
   id: string;
   teamName: string;
-  school: string;
-  members: ProjectMember[];
-  videoLink: string;
-  thumbnailUrl: string;
-  description: string;
-  challenge: Challenge;
-  rank?: number;
-  score?: number;
+  projectDescription: string;
+  googleDriveVideoLink: string;
+  githubLink?: string;
+  thumbnailImageUrl: string;
+  challengeId: string;
+  projectMembers: ProjectMember[];
+  submissionDate: string;
+  adminApproved: boolean;
+  top10Published: boolean;
+  top3Published: boolean;
+  finalRank?: number;
+  pitchDeckLink?: string;
+  overallScore?: number;
 }
 
 export interface ScoreCriteria {
+  mastery: number;
   innovation: number;
   impact: number;
-  technical: number;
-  presentation: number;
+  compliance: number;
 }
 
 export interface JudgingScore {
   id: string;
   entryId: string;
   judgeId: string;
-  criteria: ScoreCriteria;
+  scores: ScoreCriteria;
   comment: string;
+  submissionDate: string;
+  adminUploaded: boolean;
 }

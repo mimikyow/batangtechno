@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Link as LinkIcon, Save } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Link as LinkIcon, Save, Github } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,7 @@ export default function AdminPage() {
     projectDescription: "",
     challengeId: CHALLENGES[0],
     googleDriveVideoLink: "",
+    githubLink: "",
     thumbnailImageUrl: "",
     projectMembers: [
       { name: "", school: "", schoolLogoUrl: "" },
@@ -312,6 +313,7 @@ export default function AdminPage() {
       projectDescription: "",
       challengeId: CHALLENGES[0],
       googleDriveVideoLink: "",
+      githubLink: "",
       thumbnailImageUrl: "",
       projectMembers: [
         { name: "", school: "", schoolLogoUrl: "" },
@@ -464,6 +466,10 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Google Drive Video Link</label>
                   <Input placeholder="" value={newEntry.googleDriveVideoLink} onChange={e => setNewEntry({...newEntry, googleDriveVideoLink: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">GitHub Repository Link</label>
+                  <Input placeholder="https://github.com/..." value={newEntry.githubLink} onChange={e => setNewEntry({...newEntry, githubLink: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Thumbnail Image URL</label>
