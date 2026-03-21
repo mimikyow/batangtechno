@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection, query, where, collectionGroup } from "firebase/firestore";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { doc, collection, arrayUnion } from "firebase/firestore";
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
 import { sendPasswordResetEmail } from "firebase/auth";
 
@@ -54,13 +54,6 @@ export default function JudgePage() {
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
   const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
-
-  // Use a collection group query to efficiently find all scores by this judge
-  const scoresQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collectionGroup(db, "scoreSubmissions"), where("judgeId", "==", user.uid));
-  }, [db, user]);
-  const { data: judgeScores } = useCollection(scoresQuery);
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -130,13 +123,20 @@ export default function JudgePage() {
       comment: scores.comment
     }, { merge: true });
 
+    // Mark as judged in the judge's profile
+    if (judgeDocRef) {
+      updateDocumentNonBlocking(judgeDocRef, {
+        judgedEntries: arrayUnion(selectedEntry.id)
+      });
+    }
+
     toast({ title: "Score Synchronized" });
     setSelectedEntry(null);
     setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });
   };
 
   const isJudged = (entryId: string) => {
-    return judgeScores?.some(s => s.entryId === entryId);
+    return judgeRole?.judgedEntries?.includes(entryId);
   };
 
   const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";

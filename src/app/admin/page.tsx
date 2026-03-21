@@ -175,7 +175,8 @@ export default function AdminPage() {
         email: newJudge.email,
         username: newJudge.username,
         name: newJudge.name,
-        role: "judge"
+        role: "judge",
+        judgedEntries: []
       });
 
       toast({ 
