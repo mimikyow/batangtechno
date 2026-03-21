@@ -20,7 +20,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
     .sort((a, b) => a.place - b.place);
 
   const renderPodium = (categoryWinners: ProgrammingWinner[], title: string) => {
-    // Reorder for podium display: 2nd, 1st, 3rd
+    // Desktop order: 2nd, 1st, 3rd. Mobile order will be handled by order-X classes.
     const podiumOrder = [
       categoryWinners.find(w => w.place === 2),
       categoryWinners.find(w => w.place === 1),
@@ -31,10 +31,10 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
 
     return (
       <div className="space-y-12">
-        <h3 className="text-2xl font-black text-white uppercase tracking-widest text-center border-b border-white/10 pb-4">
+        <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-widest text-center border-b border-white/10 pb-4">
           {title}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end max-w-5xl mx-auto px-4">
           {podiumOrder.map((winner) => {
             const isFirst = winner.place === 1;
             const isSecond = winner.place === 2;
@@ -43,16 +43,21 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
             return (
               <div 
                 key={winner.id} 
-                className={`flex flex-col items-center group ${isFirst ? 'md:mb-8 z-10' : 'z-0'} ${isSecond ? 'order-2 md:order-1' : ''} ${isFirst ? 'order-1 md:order-2' : ''} ${isThird ? 'order-3 md:order-3' : ''}`}
+                className={`flex flex-col items-center group w-full 
+                  ${isFirst ? 'md:mb-8 z-10 order-1 md:order-2' : ''} 
+                  ${isSecond ? 'order-2 md:order-1' : ''} 
+                  ${isThird ? 'order-3 md:order-3' : ''}`}
               >
-                <div className={`relative glass-card w-full p-6 rounded-2xl transition-all duration-500 group-hover:-translate-y-2 border-white/10 ${isFirst ? 'scale-110 border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.1)]' : ''}`}>
-                  <div className={`absolute -top-6 left-1/2 -translate-x-1/2 p-2.5 rounded-full shadow-lg border border-white/20 ${
+                <div className={`relative glass-card w-full p-6 rounded-2xl transition-all duration-500 group-hover:-translate-y-2 border-white/10 
+                  ${isFirst ? 'scale-105 md:scale-110 border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.1)]' : ''}`}>
+                  
+                  <div className={`absolute -top-5 left-1/2 -translate-x-1/2 p-2 rounded-full shadow-lg border border-white/20 z-20 ${
                     isFirst ? 'bg-yellow-500' : isSecond ? 'bg-slate-400' : 'bg-amber-700'
                   }`}>
                     {isFirst ? <Trophy className="w-5 h-5 text-white" /> : isSecond ? <Medal className="w-5 h-5 text-white" /> : <Star className="w-5 h-5 text-white" />}
                   </div>
                   
-                  <div className="aspect-square relative overflow-hidden rounded-full mb-6 mx-auto w-32 h-32 border-4 border-white/5">
+                  <div className="aspect-square relative overflow-hidden rounded-full mb-6 mx-auto w-24 h-24 sm:w-32 sm:h-32 border-4 border-white/5">
                     <Image 
                       fill 
                       src={winner.pictureUrl} 
@@ -63,12 +68,12 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
                   </div>
 
                   <div className="text-center space-y-2">
-                    <h4 className={`font-black text-white uppercase tracking-tight ${isFirst ? 'text-lg' : 'text-base'}`}>
+                    <h4 className={`font-black text-white uppercase tracking-tight truncate w-full ${isFirst ? 'text-lg' : 'text-base'}`}>
                       {winner.name}
                     </h4>
                     <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-2">
-                        <div className="relative w-4 h-4">
+                      <div className="flex items-center gap-2 max-w-full">
+                        <div className="relative w-4 h-4 flex-shrink-0">
                           <Image src={winner.schoolLogoUrl} alt="School" fill className="object-contain" />
                         </div>
                         <span className="text-[10px] text-muted-foreground uppercase font-bold truncate max-w-[150px]">{winner.school}</span>
@@ -83,7 +88,8 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
                     </div>
                   </div>
                 </div>
-                <div className={`w-full rounded-t-xl ${
+                {/* Visual base for the podium pedestals - hidden on smallest screens to save space if needed, or kept for style */}
+                <div className={`w-full rounded-t-xl hidden md:block ${
                   isFirst ? 'h-16 bg-yellow-500/5 mt-4' : isSecond ? 'h-10 bg-slate-400/5 mt-2' : 'h-6 bg-amber-700/5 mt-2'
                 }`} />
               </div>
@@ -95,8 +101,8 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
   };
 
   return (
-    <div className="py-12 space-y-24">
-      <div className="space-y-32">
+    <div className="py-8 sm:py-12 space-y-16 sm:space-y-24">
+      <div className="space-y-24 sm:space-y-32">
         {renderPodium(collegeWinners, "College Division")}
         {renderPodium(hsWinners, "Senior High School Division")}
       </div>

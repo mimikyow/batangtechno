@@ -53,7 +53,7 @@ export default function Home() {
         
         <div className="relative z-20 max-w-4xl mx-auto flex flex-col items-center pt-12">
           {logo && (
-            <div className="mb-6 relative w-36 h-36">
+            <div className="mb-6 relative w-24 h-24 sm:w-36 sm:h-36">
               <Image 
                 src={logo.imageUrl}
                 alt={logo.description}
@@ -64,36 +64,36 @@ export default function Home() {
               />
             </div>
           )}
-          <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-4 glow-accent">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-4 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed tracking-[0.3em]">
+          <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed tracking-[0.2em] sm:tracking-[0.3em] px-4">
             Building the Minds of Tomorrow's Innovators
           </p>
-          <div className="mt-12 animate-bounce">
+          <div className="mt-8 sm:mt-12 animate-bounce">
             <ChevronDown className="w-6 h-6 text-accent/50" />
           </div>
         </div>
       </section>
 
       {/* Hackathon Hub Section */}
-      <section className="container mx-auto px-4 py-24">
+      <section className="container mx-auto px-4 py-16 sm:py-24">
         <Tabs defaultValue="all" className="w-full">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-16 gap-8">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-12 sm:mb-16 gap-8">
             <div>
-              <h2 className="text-4xl font-black text-white mb-2 tracking-tighter">Hackathon Challenge</h2>
-              <p className="text-muted-foreground uppercase text-[10px] tracking-[0.4em] font-bold">entries that innovate to elevate</p>
+              <h2 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tighter">Hackathon Challenge</h2>
+              <p className="text-muted-foreground uppercase text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.4em] font-bold">entries that innovate to elevate</p>
             </div>
             
-            <TabsList className="bg-white/5 border border-white/10 p-1 h-auto flex-wrap gap-1">
-              <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-6 py-2.5 uppercase text-[10px] font-black tracking-widest">
-                <Rocket className="w-3.5 h-3.5" /> All Missions
+            <TabsList className="bg-white/5 border border-white/10 p-1 h-auto flex flex-wrap gap-1 justify-start">
+              <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white gap-2 px-4 sm:px-6 py-2 uppercase text-[9px] sm:text-[10px] font-black tracking-widest flex-1 sm:flex-none">
+                <Rocket className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> All Missions
               </TabsTrigger>
-              <TabsTrigger value="finalists" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white gap-2 px-6 py-2.5 uppercase text-[10px] font-black tracking-widest">
-                <Star className="w-3.5 h-3.5" /> Stellar Finalists
+              <TabsTrigger value="finalists" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white gap-2 px-4 sm:px-6 py-2 uppercase text-[9px] sm:text-[10px] font-black tracking-widest flex-1 sm:flex-none">
+                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Stellar Finalists
               </TabsTrigger>
-              <TabsTrigger value="winners" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white gap-2 px-6 py-2.5 uppercase text-[10px] font-black tracking-widest">
-                <Trophy className="w-3.5 h-3.5" /> Final Frontiers
+              <TabsTrigger value="winners" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white gap-2 px-4 sm:px-6 py-2 uppercase text-[9px] sm:text-[10px] font-black tracking-widest flex-1 sm:flex-none">
+                <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Final Frontiers
               </TabsTrigger>
             </TabsList>
           </div>
@@ -134,7 +134,7 @@ export default function Home() {
                 <p className="text-muted-foreground uppercase text-[10px] tracking-[0.5em] font-bold">Scanning Data Stream...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
                 {filteredEntries.map(entry => (
                   <EntryCard key={entry.id} entry={entry as any} />
                 ))}
@@ -155,7 +155,7 @@ export default function Home() {
                 <Loader2 className="w-12 h-12 text-accent animate-spin" />
               </div>
             ) : finalists.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
                 {finalists.map(entry => (
                   <EntryCard key={entry.id} entry={entry as any} />
                 ))}
@@ -192,7 +192,7 @@ export default function Home() {
       </section>
 
       {/* Programming Challenge Section */}
-      <section className="bg-black/40 border-t border-white/5 py-32">
+      <section className="bg-black/40 border-t border-white/5 py-16 sm:py-32">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center text-center mb-16 space-y-4">
             <div className="flex justify-center">
@@ -200,7 +200,7 @@ export default function Home() {
                 <Code className="w-8 h-8 text-purple-500" />
               </div>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter">Programming Challenge</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tighter">Programming Challenge</h2>
             <p className="text-muted-foreground uppercase text-[10px] tracking-[0.4em] font-bold">CODING EXCELLENCE IN DISPLAY</p>
           </div>
 
