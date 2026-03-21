@@ -51,7 +51,7 @@ export default function Home() {
           <div className="star-twinkle absolute bottom-20 right-1/4 w-1 h-1 bg-white rounded-full" />
         </div>
         
-        <div className="relative z-20 max-w-4xl mx-auto flex flex-col items-center">
+        <div className="relative z-20 max-w-4xl mx-auto flex flex-col items-center pt-12">
           {logo && (
             <div className="mb-6 relative w-36 h-36">
               <Image 
