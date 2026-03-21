@@ -4,6 +4,7 @@
 import { Trophy, Star, Medal } from "lucide-react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { getGoogleDriveImageUrl } from "@/lib/utils";
 
 interface TopThreeProps {
   entries: any[];
@@ -35,8 +36,8 @@ export function TopThree({ entries }: TopThreeProps) {
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-400 p-2.5 rounded-full shadow-lg">
                   <Medal className="w-5 h-5 text-white" />
                 </div>
-                <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
-                  <Image fill src={sorted[1].thumbnailImageUrl} alt={sorted[1].teamName} className="object-cover" />
+                <div className="aspect-video relative overflow-hidden rounded-lg mb-4 bg-black/20">
+                  <Image fill src={getGoogleDriveImageUrl(sorted[1].thumbnailImageUrl)} alt={sorted[1].teamName} className="object-cover" />
                 </div>
                 <h3 className="text-lg font-bold text-white text-center mb-1">{sorted[1].teamName}</h3>
                 <div className="flex justify-center">
@@ -54,8 +55,8 @@ export function TopThree({ entries }: TopThreeProps) {
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-yellow-500 p-3.5 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.6)] animate-pulse">
                   <Trophy className="w-6 h-6 text-white" />
                 </div>
-                <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
-                  <Image fill src={sorted[0].thumbnailImageUrl} alt={sorted[0].teamName} className="object-cover" />
+                <div className="aspect-video relative overflow-hidden rounded-lg mb-4 bg-black/20">
+                  <Image fill src={getGoogleDriveImageUrl(sorted[0].thumbnailImageUrl)} alt={sorted[0].teamName} className="object-cover" />
                 </div>
                 <h3 className="text-xl font-black text-white text-center mb-1 italic uppercase tracking-tighter">{sorted[0].teamName}</h3>
                 <div className="flex justify-center">
@@ -73,8 +74,8 @@ export function TopThree({ entries }: TopThreeProps) {
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-700 p-2.5 rounded-full shadow-lg">
                   <Star className="w-5 h-5 text-white" />
                 </div>
-                <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
-                  <Image fill src={sorted[2].thumbnailImageUrl} alt={sorted[2].teamName} className="object-cover" />
+                <div className="aspect-video relative overflow-hidden rounded-lg mb-4 bg-black/20">
+                  <Image fill src={getGoogleDriveImageUrl(sorted[2].thumbnailImageUrl)} alt={sorted[2].teamName} className="object-cover" />
                 </div>
                 <h3 className="text-lg font-bold text-white text-center mb-1">{sorted[2].teamName}</h3>
                  <div className="flex justify-center">
