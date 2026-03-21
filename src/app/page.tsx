@@ -67,8 +67,8 @@ export default function Home() {
           <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-4 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed uppercase tracking-[0.3em]">
-            Unleashing Future Innovators
+          <p className="text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed tracking-[0.3em]">
+            Building the Minds of Tomorrow's Innovators
           </p>
           <div className="mt-12 animate-bounce">
             <ChevronDown className="w-6 h-6 text-accent/50" />
