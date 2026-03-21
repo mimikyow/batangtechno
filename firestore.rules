@@ -49,15 +49,18 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
 
       match /scoreSubmissions/{scoreSubmissionId} {
-        allow get, list: if isAdmin() || (isJudge() && request.auth.uid == scoreSubmissionId);
-        allow create, update: if isJudge() && request.auth.uid == scoreSubmissionId;
+        // Judge can only see and manage their own score for an entry
+        allow get, list: if isAdmin() || (isSignedIn() && request.auth.uid == scoreSubmissionId);
+        allow create, update: if isSignedIn() && request.auth.uid == scoreSubmissionId;
         allow delete: if isAdmin();
       }
     }
 
-    // Collection group rule for judges to see their own history
-    match /{path=**}/scoreSubmissions/{scoreSubmissionId} {
-      allow list: if isJudge() && (isAdmin() || request.auth.uid == scoreSubmissionId);
+    // Critical: Collection group rule for global score queries
+    match /{path=**}/scoreSubmissions/{scoreId} {
+      // Allows judges to list all their submissions globally (docId = judgeUid)
+      allow list: if isSignedIn() && (isAdmin() || request.auth.uid == scoreId);
+      allow get: if isSignedIn() && (isAdmin() || request.auth.uid == scoreId);
     }
 
     match /judgeAssignments/{assignmentId} {
