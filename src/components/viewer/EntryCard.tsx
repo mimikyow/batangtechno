@@ -160,7 +160,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                    <iframe width="100%" height="100%" src={embedUrl} title="Pitch Video" allowFullScreen></iframe>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
                       <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Quadrant</h4>
@@ -172,23 +172,21 @@ export function EntryCard({ entry }: EntryCardProps) {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-2">
-                      {entry.pitchDeckLink && (
-                        <div>
-                          <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Finalist Payload</h4>
-                          <Button asChild variant="outline" className="w-full border-accent/30 text-accent hover:bg-accent/10 h-8 text-[10px] uppercase font-bold">
-                            <a href={entry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
-                              <FileText className="w-3 h-3 mr-2" /> View Pitch Deck
-                            </a>
-                          </Button>
-                        </div>
-                      )}
-                    </div>
                     <div>
                       <h4 className="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Crew Members</h4>
                       <div className="space-y-2">
                         {entry.projectMembers?.map((m, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2 bg-white/5 rounded border border-white/10">
+                          <div key={i} className="flex items-center gap-3 p-2 bg-white/5 rounded border border-white/10">
+                            {m.schoolLogoUrl && (
+                              <div className="relative w-8 h-8 flex-shrink-0 bg-black rounded-full border border-white/10 overflow-hidden">
+                                <Image 
+                                  src={getGoogleDriveImageUrl(m.schoolLogoUrl)} 
+                                  alt={m.school} 
+                                  fill 
+                                  className="object-contain p-1"
+                                />
+                              </div>
+                            )}
                             <div className="overflow-hidden">
                               <div className="text-[10px] font-bold text-white truncate">{m.name}</div>
                               <div className="text-[8px] text-muted-foreground uppercase truncate">{m.school}</div>
