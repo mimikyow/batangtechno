@@ -7,6 +7,11 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 export const metadata: Metadata = {
   title: 'Batang Techno',
   description: 'A futuristic judging platform for local hackathons',
+  icons: {
+    icon: '/favicon.ico', // You can replace this with your own filename (e.g., /logo.png)
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({
