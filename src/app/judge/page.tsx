@@ -208,8 +208,8 @@ export default function JudgePage() {
                   </div>
 
                   <div className="space-y-6">
-                    {/* Source Code and Pitch Deck Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Source Code and Pitch Deck Section - Stacked for full width consistency */}
+                    <div className="flex flex-col gap-4">
                       {selectedEntry.githubLink && (
                         <div className="glass-card p-6 rounded-xl border-accent/30">
                           <h3 className="text-white font-bold mb-2 flex items-center gap-2">
@@ -236,7 +236,7 @@ export default function JudgePage() {
                       )}
                     </div>
 
-                    {/* Project Brief Section - Moved below links for better vertical space */}
+                    {/* Project Brief Section */}
                     <div className="glass-card p-6 rounded-xl">
                       <h3 className="text-white font-bold mb-2 flex items-center gap-2">
                         <Info className="w-4 h-4 text-accent" /> Project Brief
