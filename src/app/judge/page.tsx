@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection } from "firebase/firestore";
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { doc, collection, query, where, collectionGroup, getDocs } from "firebase/firestore";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { getGoogleDriveEmbedUrl } from "@/lib/utils";
 import { sendPasswordResetEmail } from "firebase/auth";
 
@@ -43,7 +43,7 @@ const CRITERIA = [
 ];
 
 export default function JudgePage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading } = user ? useUser() : { user: null, isUserLoading: true };
   const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
@@ -54,6 +54,13 @@ export default function JudgePage() {
 
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
   const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
+
+  // Use a collection group query to efficiently find all scores by this judge
+  const scoresQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collectionGroup(db, "scoreSubmissions"), where("judgeId", "==", user.uid));
+  }, [db, user]);
+  const { data: judgeScores } = useCollection(scoresQuery);
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -111,17 +118,25 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
-    addDocumentNonBlocking(collection(db, "entries", selectedEntry.id, "scoreSubmissions"), {
+    // Use the judge's UID as the document ID to ensure only one submission per judge per entry
+    const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
+    
+    setDocumentNonBlocking(scoreRef, {
       judgeId: user.uid,
       entryId: selectedEntry.id,
       scores,
       submissionDate: new Date().toISOString(),
-      adminUploaded: false
-    });
+      adminUploaded: false,
+      comment: scores.comment
+    }, { merge: true });
 
-    toast({ title: "Score Recorded" });
+    toast({ title: "Score Synchronized" });
     setSelectedEntry(null);
     setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });
+  };
+
+  const isJudged = (entryId: string) => {
+    return judgeScores?.some(s => s.entryId === entryId);
   };
 
   const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";
@@ -150,20 +165,31 @@ export default function JudgePage() {
           <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2">
             {isEntriesLoading ? (
               <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
-            ) : entries?.map(entry => (
-              <button
-                key={entry.id}
-                onClick={() => setSelectedEntry(entry)}
-                className={`p-4 rounded-lg text-left transition-all border ${
-                  selectedEntry?.id === entry.id 
-                    ? "bg-accent/10 border-accent shadow-[0_0_10px_rgba(51,153,255,0.2)]" 
-                    : "bg-white/5 border-white/10 hover:border-white/30"
-                }`}
-              >
-                <div className="font-bold text-white text-sm">{entry.teamName}</div>
-                <div className="text-[10px] text-muted-foreground uppercase">{entry.projectSchool}</div>
-              </button>
-            ))}
+            ) : entries?.map(entry => {
+              const judged = isJudged(entry.id);
+              return (
+                <button
+                  key={entry.id}
+                  disabled={judged}
+                  onClick={() => setSelectedEntry(entry)}
+                  className={`p-4 rounded-lg text-left transition-all border ${
+                    judged 
+                      ? "bg-black/40 border-white/5 opacity-50 cursor-not-allowed" 
+                      : selectedEntry?.id === entry.id 
+                        ? "bg-accent/10 border-accent shadow-[0_0_10px_rgba(51,153,255,0.2)]" 
+                        : "bg-white/5 border-white/10 hover:border-white/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className={`font-bold text-sm ${judged ? 'text-muted-foreground' : 'text-white'}`}>{entry.teamName}</div>
+                    {judged && <Lock className="w-3 h-3 text-accent" />}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground uppercase">
+                    {judged ? "LOGGED & SECURED" : entry.projectMembers?.[0]?.school || "Multiple Schools"}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -224,7 +250,7 @@ export default function JudgePage() {
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-white">Final Thoughts</label>
                       <Textarea 
-                        placeholder="" 
+                        placeholder="Log any additional observations here..." 
                         className="bg-black/20 border-white/10 h-24 text-sm"
                         value={scores.comment}
                         onChange={e => setScores({...scores, comment: e.target.value})}
@@ -244,7 +270,7 @@ export default function JudgePage() {
                 <AlertCircle className="w-10 h-10 text-accent" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Awaiting Selection</h2>
-              <p className="text-muted-foreground max-w-xs">Select a project to begin.</p>
+              <p className="text-muted-foreground max-w-xs">Select a project to begin the decryption of its innovation.</p>
             </div>
           )}
         </div>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseConfig } from "@/firebase/config";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function AdminPage() {
   const { user, isUserLoading } = useUser();
@@ -56,6 +57,10 @@ export default function AdminPage() {
   const [isAddingJudge, setIsAddingJudge] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [viewingEntry, setViewingEntry] = useState<any>(null);
+  const [entryScores, setEntryScores] = useState<any[]>([]);
+  const [isLoadingScores, setIsLoadingScores] = useState(false);
+
   const [processingStatus, setProcessingStatus] = useState<"IDLE" | "CALCULATING" | "READY">("IDLE");
   const [rankedResults, setRankedResults] = useState<any[]>([]);
 
@@ -83,6 +88,31 @@ export default function AdminPage() {
       router.push("/login");
     }
   }, [user, isUserLoading, router]);
+
+  const handleViewScores = async (entry: any) => {
+    setViewingEntry(entry);
+    setIsLoadingScores(true);
+    try {
+      const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
+      const snapshot = await getDocs(scoresRef);
+      const scores: any[] = [];
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const judge = judges?.find(j => j.id === data.judgeId);
+        scores.push({
+          ...data,
+          judgeName: judge?.name || "Unknown Judge"
+        });
+      });
+      
+      setEntryScores(scores);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Fetch Failed", description: "Could not load scores." });
+    } finally {
+      setIsLoadingScores(false);
+    }
+  };
 
   if (isUserLoading) {
     return (
@@ -524,7 +554,75 @@ export default function AdminPage() {
                     </Select>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => handleViewScores(entry)} className="text-accent">
+                            <BarChart3 className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl bg-card border-border">
+                          <DialogHeader>
+                            <DialogTitle className="text-2xl font-bold uppercase italic flex items-center gap-3">
+                              Score Breakdown: {entry.teamName}
+                            </Badge>
+                          </DialogHeader>
+                          <div className="py-6">
+                            {isLoadingScores ? (
+                              <div className="h-64 flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                              </div>
+                            ) : entryScores.length === 0 ? (
+                              <div className="h-64 flex flex-col items-center justify-center text-muted-foreground italic border-2 border-dashed border-white/5 rounded-xl">
+                                No judge evaluations recorded yet.
+                              </div>
+                            ) : (
+                              <ScrollArea className="h-[50vh]">
+                                <div className="space-y-6 pr-4">
+                                  {entryScores.map((score, idx) => (
+                                    <div key={idx} className="p-6 bg-white/5 rounded-xl border border-white/10 space-y-4">
+                                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                                        <div className="font-bold text-accent uppercase tracking-widest text-sm">{score.judgeName}</div>
+                                        <Badge variant="outline" className="text-[10px] border-white/20">
+                                          {new Date(score.submissionDate).toLocaleDateString()}
+                                        </Badge>
+                                      </div>
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="p-3 bg-black/20 rounded-lg text-center">
+                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Mastery</div>
+                                          <div className="text-xl font-bold text-white">{score.scores?.mastery || 0}</div>
+                                        </div>
+                                        <div className="p-3 bg-black/20 rounded-lg text-center">
+                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Innovation</div>
+                                          <div className="text-xl font-bold text-white">{score.scores?.innovation || 0}</div>
+                                        </div>
+                                        <div className="p-3 bg-black/20 rounded-lg text-center">
+                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Impact</div>
+                                          <div className="text-xl font-bold text-white">{score.scores?.impact || 0}</div>
+                                        </div>
+                                        <div className="p-3 bg-black/20 rounded-lg text-center">
+                                          <div className="text-[9px] uppercase text-muted-foreground mb-1">Compliance</div>
+                                          <div className="text-xl font-bold text-white">{score.scores?.compliance || 0}</div>
+                                        </div>
+                                      </div>
+                                      {score.comment && (
+                                        <div className="p-4 bg-black/40 rounded-lg">
+                                          <div className="text-[9px] uppercase text-accent font-bold mb-2">Judge's Comment</div>
+                                          <p className="text-xs text-slate-300 italic">"{score.comment}"</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </ScrollArea>
+                            )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
