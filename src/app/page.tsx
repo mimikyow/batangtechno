@@ -51,7 +51,7 @@ export default function Home() {
           <div className="star-twinkle absolute bottom-20 right-1/4 w-1 h-1 bg-white rounded-full" />
         </div>
         
-        <div className="relative z-20 max-w-4xl mx-auto flex flex-col items-center pt-12">
+        <div className="relative z-20 max-w-5xl mx-auto flex flex-col items-center pt-12">
           {logo && (
             <div className="mb-6 relative w-24 h-24 sm:w-36 sm:h-36">
               <Image 
@@ -67,7 +67,7 @@ export default function Home() {
           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white italic tracking-tighter mb-4 glow-accent">
             Batang <span className="text-accent">Techno</span>
           </h1>
-          <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed tracking-[0.2em] sm:tracking-[0.3em] px-4">
+          <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-light max-w-none mx-auto leading-relaxed tracking-[0.2em] sm:tracking-[0.3em] px-4 whitespace-nowrap">
             Building the Minds of Tomorrow's Innovators
           </p>
           <div className="mt-8 sm:mt-12 animate-bounce">
