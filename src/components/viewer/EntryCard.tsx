@@ -59,8 +59,23 @@ export function EntryCard({ entry }: EntryCardProps) {
           className="object-cover transition-transform group-hover:scale-105" 
           data-ai-hint="project thumbnail"
         />
+
+        {/* Branding Logo - Centered in Thumbnail */}
+        {logo && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-20 group-hover:opacity-40 transition-opacity">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+              <Image 
+                src={logo.imageUrl} 
+                alt="Batang Techno Branding" 
+                fill 
+                className="object-contain" 
+                data-ai-hint={logo.imageHint}
+              />
+            </div>
+          </div>
+        )}
         
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
           <Dialog>
             <DialogTrigger asChild>
               <Button size="icon" variant="ghost" className="rounded-full w-14 h-14 bg-accent/20 backdrop-blur-sm border border-accent/40 hover:bg-accent/40 pointer-events-auto">
