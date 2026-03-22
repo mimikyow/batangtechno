@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2 } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, getDocs, setDoc, writeBatch } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -387,6 +388,8 @@ export default function AdminPage() {
   const isPlaceTaken = (cat: "HIGH_SCHOOL" | "COLLEGE", place: number) => {
     return progWinners?.some(w => w.category === cat && w.place === place);
   };
+
+  const totalEntries = entries?.length || 0;
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -799,6 +802,55 @@ export default function AdminPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="glass-card rounded-xl overflow-hidden mb-12">
+        <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+          <h2 className="font-bold uppercase text-xs tracking-widest text-accent flex items-center gap-2">
+            <Users className="w-4 h-4" /> Judge Status Recon
+          </h2>
+          <Badge variant="outline" className="text-[10px] border-white/10 text-muted-foreground uppercase">
+            {judges?.length || 0} Operatives Active
+          </Badge>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+          {judges?.map((judge) => {
+            const completedCount = judge.judgedEntries?.length || 0;
+            const progress = totalEntries > 0 ? (completedCount / totalEntries) * 100 : 0;
+            const isFinished = completedCount >= totalEntries && totalEntries > 0;
+
+            return (
+              <div key={judge.id} className="p-4 bg-white/5 rounded-lg border border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-white text-sm">{judge.name}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase">@{judge.username}</span>
+                  </div>
+                  {isFinished ? (
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                  ) : (
+                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  )}
+                </div>
+                
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[9px] uppercase tracking-widest font-bold">
+                    <span className="text-muted-foreground">Mission Progress</span>
+                    <span className={isFinished ? "text-accent" : "text-white"}>
+                      {completedCount} / {totalEntries} Logged
+                    </span>
+                  </div>
+                  <Progress value={progress} className="h-1.5" />
+                </div>
+
+                <div className="text-[9px] text-muted-foreground uppercase flex items-center gap-2">
+                  <ShieldAlert className="w-3 h-3 text-accent/50" />
+                  {judge.email}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
