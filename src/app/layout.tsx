@@ -34,7 +34,7 @@ export default function RootLayout({
           </main>
           <Toaster />
           <footer className="border-t border-border/30 py-8 text-center text-muted-foreground text-sm bg-black/40 backdrop-blur-sm">
-            <p>© 2024 Batang Techno. Aiming for the Stars.</p>
+            <p>© 2026 Batang Techno. Innovate to Elevate.</p>
           </footer>
         </FirebaseClientProvider>
       </body>
