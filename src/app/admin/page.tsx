@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,7 @@ export default function AdminPage() {
   const { data: progWinners } = useCollection(progWinnersQuery);
 
   const [isAdding, setIsAdding] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [isAddingJudge, setIsAddingJudge] = useState(false);
   const [isAddingProgWinner, setIsAddingProgWinner] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -54,6 +55,7 @@ export default function AdminPage() {
   const [publishingType, setPublishingType] = useState<"TOP10" | "TOP3">("TOP10");
 
   const [newEntry, setNewEntry] = useState({
+    projectName: "",
     teamName: "",
     projectDescription: "",
     challengeId: CHALLENGES[0],
@@ -313,9 +315,28 @@ export default function AdminPage() {
     toast({ title: "Pitch Deck Updated" });
   };
 
+  const handleEditEntry = (entry: any) => {
+    setEditingEntryId(entry.id);
+    setNewEntry({
+      projectName: entry.projectName || "",
+      teamName: entry.teamName || "",
+      projectDescription: entry.projectDescription || "",
+      challengeId: entry.challengeId || CHALLENGES[0],
+      googleDriveVideoLink: entry.googleDriveVideoLink || "",
+      githubLink: entry.githubLink || "",
+      thumbnailImageUrl: entry.thumbnailImageUrl || "",
+      projectMembers: entry.projectMembers || [
+        { name: "", school: "", schoolLogoUrl: "" },
+        { name: "", school: "", schoolLogoUrl: "" },
+        { name: "", school: "", schoolLogoUrl: "" }
+      ]
+    });
+    setIsAdding(true);
+  };
+
   const handleSaveEntry = () => {
-    if (!newEntry.teamName || newEntry.projectMembers.length < 3) {
-      toast({ variant: "destructive", title: "Missing Members", description: "A team must have at least 3 members." });
+    if (!newEntry.teamName || !newEntry.projectName || newEntry.projectMembers.length < 3) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Project Name, Team Name, and at least 3 members are required." });
       return;
     }
 
@@ -324,16 +345,26 @@ export default function AdminPage() {
       return;
     }
     
-    addDocumentNonBlocking(collection(db, "entries"), {
-      ...newEntry,
-      submissionDate: new Date().toISOString(),
-      adminApproved: true,
-      top10Published: false,
-      top3Published: false
-    });
+    if (editingEntryId) {
+      updateDocumentNonBlocking(doc(db, "entries", editingEntryId), {
+        ...newEntry
+      });
+      toast({ title: "Entry Updated" });
+    } else {
+      addDocumentNonBlocking(collection(db, "entries"), {
+        ...newEntry,
+        submissionDate: new Date().toISOString(),
+        adminApproved: true,
+        top10Published: false,
+        top3Published: false
+      });
+      toast({ title: "Entry Deployed" });
+    }
 
     setIsAdding(false);
+    setEditingEntryId(null);
     setNewEntry({
+      projectName: "",
       teamName: "",
       projectDescription: "",
       challengeId: CHALLENGES[0],
@@ -346,7 +377,6 @@ export default function AdminPage() {
         { name: "", school: "", schoolLogoUrl: "" }
       ]
     });
-    toast({ title: "Entry Deployed" });
   };
 
   const handleDeleteEntry = (id: string) => {
@@ -489,7 +519,26 @@ export default function AdminPage() {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isAdding} onOpenChange={setIsAdding}>
+          <Dialog open={isAdding} onOpenChange={(open) => {
+            setIsAdding(open);
+            if (!open) {
+              setEditingEntryId(null);
+              setNewEntry({
+                projectName: "",
+                teamName: "",
+                projectDescription: "",
+                challengeId: CHALLENGES[0],
+                googleDriveVideoLink: "",
+                githubLink: "",
+                thumbnailImageUrl: "",
+                projectMembers: [
+                  { name: "", school: "", schoolLogoUrl: "" },
+                  { name: "", school: "", schoolLogoUrl: "" },
+                  { name: "", school: "", schoolLogoUrl: "" }
+                ]
+              });
+            }
+          }}>
             <DialogTrigger asChild>
               <Button className="bg-accent hover:bg-accent/80 text-white uppercase text-xs font-bold tracking-widest">
                 <Plus className="w-4 h-4 mr-2" /> New Entry
@@ -497,12 +546,20 @@ export default function AdminPage() {
             </DialogTrigger>
             <DialogContent className="max-w-3xl bg-card border-border overflow-y-auto max-h-[90vh]">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold uppercase italic">Deploy New Entry</DialogTitle>
+                <DialogTitle className="text-2xl font-bold uppercase italic">
+                  {editingEntryId ? "Modify Entry" : "Deploy New Entry"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Team Name</label>
-                  <Input placeholder="" value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Project Name</label>
+                    <Input placeholder="" value={newEntry.projectName} onChange={e => setNewEntry({...newEntry, projectName: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase text-accent tracking-widest">Team Name</label>
+                    <Input placeholder="" value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} />
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -589,8 +646,13 @@ export default function AdminPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsAdding(false)} className="uppercase text-xs hover:text-white">Cancel</Button>
-                <Button className="bg-accent uppercase text-xs font-bold" onClick={handleSaveEntry}>Save Entry</Button>
+                <Button variant="ghost" onClick={() => {
+                  setIsAdding(false);
+                  setEditingEntryId(null);
+                }} className="uppercase text-xs hover:text-white">Cancel</Button>
+                <Button className="bg-accent uppercase text-xs font-bold" onClick={handleSaveEntry}>
+                  {editingEntryId ? "Update Entry" : "Save Entry"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -665,7 +727,7 @@ export default function AdminPage() {
         <Table>
           <TableHeader className="bg-white/5">
             <TableRow>
-              <TableHead>Team Status</TableHead>
+              <TableHead>Project & Team</TableHead>
               <TableHead>Challenge</TableHead>
               <TableHead>Phase Access</TableHead>
               <TableHead className="text-right">Manage</TableHead>
@@ -677,12 +739,12 @@ export default function AdminPage() {
                 <TableCell>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white">{entry.teamName}</span>
+                      <span className="font-bold text-white">{entry.projectName || "Unnamed Project"}</span>
                       {entry.top10Published && <Badge className="bg-accent/20 text-accent text-[8px] h-4">Finalist</Badge>}
                       {entry.top3Published && <Badge className="bg-yellow-500/20 text-yellow-500 text-[8px] h-4">Winner</Badge>}
                     </div>
                     <span className="text-[10px] text-muted-foreground uppercase">
-                      {entry.projectMembers?.[0]?.school || "No School"}
+                      {entry.teamName} • {entry.projectMembers?.[0]?.school || "No School"}
                     </span>
                   </div>
                 </TableCell>
@@ -722,6 +784,9 @@ export default function AdminPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditEntry(entry)} className="text-accent/60 hover:text-accent">
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleViewScores(entry)} className="text-accent">
                       <BarChart3 className="w-4 h-4" />
                     </Button>
@@ -740,7 +805,7 @@ export default function AdminPage() {
         <DialogContent className="max-w-4xl bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold uppercase italic">
-              Score Breakdown: {viewingEntry?.teamName}
+              Score Breakdown: {viewingEntry?.projectName || viewingEntry?.teamName}
             </DialogTitle>
           </DialogHeader>
           <div className="py-6">

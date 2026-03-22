@@ -97,6 +97,10 @@
           "type": "string",
           "description": "Unique identifier for the Entry entity."
         },
+        "projectName": {
+          "type": "string",
+          "description": "The official name of the hackathon project."
+        },
         "teamName": {
           "type": "string",
           "description": "The name of the team that submitted this entry."
@@ -171,6 +175,7 @@
       "required": [
         "id",
         "teamName",
+        "projectName",
         "projectMembers",
         "googleDriveVideoLink",
         "githubLink",

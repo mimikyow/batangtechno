@@ -16,6 +16,7 @@ export interface ProjectMember {
 
 export interface HackathonEntry {
   id: string;
+  projectName: string;
   teamName: string;
   projectDescription: string;
   googleDriveVideoLink: string;
