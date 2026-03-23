@@ -19,27 +19,29 @@ const CRITERIA = [
     key: "mastery", 
     label: "Mastery and Use of Software Concepts", 
     weight: "30%", 
-    desc: "Evaluates application of techniques to develop functional solutions." 
+    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution. Emphasis is placed on overall quality, efficiency, and appropriate use of available tools and resources." 
   },
   { 
     key: "innovation", 
     label: "Novelty and Innovation", 
     weight: "30%", 
-    desc: "Assesses originality and creativity." 
+    desc: "Assesses the originality of the project and the creativity behind its concept and implementation. This includes how the solution introduces new ideas, improves existing approaches, or applies technology in a unique and meaningful way." 
   },
   { 
     key: "impact", 
     label: "Real-world Impact and Viability", 
     weight: "30%", 
-    desc: "Measures relevance and potential for practical deployment." 
+    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment. Consideration is given to feasibility, scalability, sustainability, and the overall benefit to users or communities." 
   },
   { 
     key: "compliance", 
-    label: "Compliance to Rules", 
+    label: "Compliance to Rules and Restrictions", 
     weight: "10%", 
-    desc: "Follows competition guidelines." 
+    desc: "Determines the extent to which the project follows all competition guidelines, technical constraints, ethical standards, and submission requirements. Failure to comply may result in point deductions or disqualification." 
   },
 ];
+
+const COMPLIANCE_DETAILS = "The video must showcase the working prototype, emphasizing its key features and functionality. It should briefly explain the problem, the proposed solution, and its real-world application. Teams must also clearly identify the technologies used, including programming languages, frameworks, libraries, platforms, APIs, and any AI tools. The presentation should reflect the actual state of the prototype—purely conceptual or slide-only videos may receive lower scores. The video length should be 3–5 minutes; failure to meet this may result in deductions.";
 
 export default function JudgePage() {
   const { user, isUserLoading } = useUser();
@@ -110,7 +112,6 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
-    // Use Judge UID as the document ID for the score to ensure 1 score per judge per entry
     const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
     
     setDocumentNonBlocking(scoreRef, {
@@ -196,7 +197,7 @@ export default function JudgePage() {
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1 space-y-6">
                   <div>
-                    <h1 className="text-4xl font-black text-white glow-accent italic">{selectedEntry.teamName}</h1>
+                    <h1 className="text-4xl font-black text-white glow-accent italic">{selectedEntry.projectName || selectedEntry.teamName}</h1>
                     <div className="flex items-center gap-2 mt-2">
                       <p className="text-accent font-semibold">{selectedEntry.challengeId}</p>
                       {selectedEntry.top10Published && <Badge className="bg-accent/20 text-accent border-accent/40">FINALIST ROUND</Badge>}
@@ -208,7 +209,6 @@ export default function JudgePage() {
                   </div>
 
                   <div className="space-y-6">
-                    {/* Source Code and Pitch Deck Section - Stacked for full width consistency */}
                     <div className="flex flex-col gap-4">
                       {selectedEntry.githubLink && (
                         <div className="glass-card p-6 rounded-xl border-accent/30">
@@ -236,31 +236,57 @@ export default function JudgePage() {
                       )}
                     </div>
 
-                    {/* Project Brief Section */}
                     <div className="glass-card p-6 rounded-xl">
                       <h3 className="text-white font-bold mb-2 flex items-center gap-2">
                         <Info className="w-4 h-4 text-accent" /> Project Brief
                       </h3>
                       <p className="text-slate-300 text-sm leading-relaxed">{selectedEntry.projectDescription}</p>
                     </div>
+
+                    <div className="glass-card p-6 rounded-xl">
+                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-xs">
+                        <Scale className="w-4 h-4 text-accent" /> Matrix Guide
+                      </h3>
+                      <div className="space-y-6">
+                        {CRITERIA.map(crit => (
+                          <div key={crit.key} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[11px] font-bold text-white uppercase">{crit.label}</h4>
+                              <Badge variant="outline" className="text-[9px] border-accent/30 text-accent">{crit.weight}</Badge>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground leading-relaxed">{crit.desc}</p>
+                            {crit.key === 'compliance' && (
+                              <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/5">
+                                <h5 className="text-[9px] font-bold text-accent uppercase mb-1 flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" /> Mandatory Requirements
+                                </h5>
+                                <p className="text-[9px] text-slate-400 italic leading-snug">
+                                  {COMPLIANCE_DETAILS}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="w-full lg:w-[450px] glass-card p-8 rounded-2xl border-accent/30 shadow-glow">
+                <div className="w-full lg:w-[450px] glass-card p-8 rounded-2xl border-accent/30 shadow-glow sticky top-24 h-fit">
                   <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-                    <h3 className="text-xl font-bold text-white">Evaluation Matrix</h3>
+                    <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Evaluation</h3>
                     <Scale className="w-5 h-5 text-accent/50" />
                   </div>
                   
-                  <div className="space-y-8">
+                  <div className="space-y-10">
                     {CRITERIA.map(crit => (
-                      <div key={crit.key} className="space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex flex-col">
-                            <label className="text-sm font-bold text-white leading-tight">{crit.label}</label>
-                            <Badge variant="outline" className="w-fit text-[9px] h-4 px-1 mt-1 border-accent/30 text-accent">{crit.weight} Weight</Badge>
+                      <div key={crit.key} className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[11px] font-bold text-white uppercase tracking-wider">{crit.label}</label>
+                          <div className="flex flex-col items-end">
+                            <span className="text-accent font-mono text-2xl font-bold leading-none">{(scores as any)[crit.key]}</span>
+                            <span className="text-[9px] text-muted-foreground font-bold">/ 10</span>
                           </div>
-                          <span className="text-accent font-mono text-lg">{(scores as any)[crit.key]} / 10</span>
                         </div>
                         <Slider 
                           max={10} 
@@ -271,30 +297,30 @@ export default function JudgePage() {
                       </div>
                     ))}
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-white">Final Thoughts</label>
+                    <div className="space-y-2 pt-4">
+                      <label className="text-[11px] font-bold text-white uppercase tracking-wider">Confidential Comments</label>
                       <Textarea 
-                        placeholder="Log any observations here..." 
-                        className="bg-black/20 border-white/10 h-24 text-sm"
+                        placeholder="Log observations for mission control..." 
+                        className="bg-black/20 border-white/10 h-28 text-sm focus:border-accent transition-colors"
                         value={scores.comment}
                         onChange={e => setScores({...scores, comment: e.target.value})}
                       />
                     </div>
 
-                    <Button className="w-full bg-accent hover:bg-accent/80 py-6 text-white font-bold uppercase tracking-widest" onClick={handleSubmitScore}>
-                      <CheckCircle className="w-5 h-5 mr-2" /> Submit Evaluation
+                    <Button className="w-full bg-accent hover:bg-accent/80 py-7 text-white font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(51,153,255,0.2)]" onClick={handleSubmitScore}>
+                      <CheckCircle className="w-5 h-5 mr-3" /> Transmit Evaluation
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center py-40 glass-card rounded-2xl border-dashed border-2">
+            <div className="h-full flex flex-col items-center justify-center text-center py-40 glass-card rounded-2xl border-dashed border-2 border-white/10">
               <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
                 <AlertCircle className="w-10 h-10 text-accent" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Awaiting Mission Selection</h2>
-              <p className="text-muted-foreground max-w-xs">Select a project from the mission log to begin its decryption.</p>
+              <h2 className="text-2xl font-bold text-white mb-2 uppercase italic tracking-tighter">Awaiting Signal Selection</h2>
+              <p className="text-muted-foreground max-w-xs text-xs uppercase tracking-widest leading-relaxed">Select a mission project from the mission log to begin decryption and evaluation.</p>
             </div>
           )}
         </div>
