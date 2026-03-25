@@ -7,13 +7,15 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, Edit3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection, arrayUnion } from "firebase/firestore";
+import { doc, collection, arrayUnion, getDoc } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { getGoogleDriveEmbedUrl } from "@/lib/utils";
+import { getGoogleDriveEmbedUrl, cn } from "@/lib/utils";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { CHALLENGES } from "@/lib/constants";
 
 const CRITERIA = [
   { 
@@ -63,6 +65,8 @@ export default function JudgePage() {
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [filter, setFilter] = useState("ALL");
+  const [isLoadingScores, setIsLoadingScores] = useState(false);
   const [scores, setScores] = useState<Record<string, string | number>>({
     mastery: "",
     innovation: "",
@@ -76,6 +80,38 @@ export default function JudgePage() {
       router.push("/login");
     }
   }, [user, isUserLoading, router]);
+
+  // Load existing scores when an entry is selected
+  useEffect(() => {
+    async function loadExistingScores() {
+      if (!selectedEntry || !user || !db) return;
+      
+      setIsLoadingScores(true);
+      try {
+        const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
+        const snapshot = await getDoc(scoreRef);
+        
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setScores({
+            mastery: data.scores?.mastery ?? "",
+            innovation: data.scores?.innovation ?? "",
+            impact: data.scores?.impact ?? "",
+            compliance: data.scores?.compliance ?? "",
+            comment: data.comment ?? ""
+          });
+        } else {
+          setScores({ mastery: "", innovation: "", impact: "", compliance: "", comment: "" });
+        }
+      } catch (error) {
+        console.error("Error loading scores:", error);
+      } finally {
+        setIsLoadingScores(false);
+      }
+    }
+
+    loadExistingScores();
+  }, [selectedEntry, user, db]);
 
   if (isUserLoading || isJudgeChecking) {
     return (
@@ -134,7 +170,6 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
-    // Validate that all scores are filled
     const missing = CRITERIA.find(c => scores[c.key] === "");
     if (missing) {
       toast({ variant: "destructive", title: "Incomplete Mission", description: `Please provide a score for ${missing.label}.` });
@@ -172,52 +207,83 @@ export default function JudgePage() {
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
+  const filteredEntries = (entries || []).filter(e => filter === "ALL" || e.challengeId === filter);
   const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";
 
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-80 flex flex-col gap-4">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
-            Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{entries?.length || 0}</Badge>
-          </h2>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleResetPassword}
-            disabled={isResettingPassword}
-            className="w-full border-white/10 text-muted-foreground hover:text-white h-9 text-[10px] uppercase tracking-widest mb-4"
-          >
-            {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <KeyRound className="w-3 h-3 mr-2" />}
-            Reset Password
-          </Button>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              Mission Log <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">{filteredEntries.length}</Badge>
+            </h2>
+          </div>
 
-          <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2">
+          <div className="space-y-4 mb-6">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="bg-white/5 border-white/10 h-10 text-[10px] uppercase font-bold tracking-widest text-white">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-3 h-3 text-accent" />
+                  <SelectValue placeholder="Filter Categories" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                <SelectItem value="ALL">All Categories</SelectItem>
+                {CHALLENGES.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleResetPassword}
+              disabled={isResettingPassword}
+              className="w-full border-white/10 text-muted-foreground hover:text-white h-9 text-[10px] uppercase tracking-widest"
+            >
+              {isResettingPassword ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <KeyRound className="w-3 h-3 mr-2" />}
+              Reset Password
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-2">
             {isEntriesLoading ? (
               <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
-            ) : entries?.map(entry => {
+            ) : filteredEntries.map(entry => {
               const judged = isJudged(entry.id);
+              const isSelected = selectedEntry?.id === entry.id;
+              
               return (
                 <button
                   key={entry.id}
-                  disabled={judged}
                   onClick={() => setSelectedEntry(entry)}
-                  className={`p-4 rounded-lg text-left transition-all border ${
-                    judged 
-                      ? "bg-black/40 border-white/5 opacity-50 cursor-not-allowed" 
-                      : selectedEntry?.id === entry.id 
-                        ? "bg-accent/10 border-accent shadow-[0_0_10px_rgba(51,153,255,0.2)]" 
+                  className={cn(
+                    "p-4 rounded-lg text-left transition-all border group",
+                    isSelected 
+                      ? "bg-accent/10 border-accent shadow-[0_0_10px_rgba(51,153,255,0.2)]" 
+                      : judged
+                        ? "bg-black/40 border-accent/20 hover:border-accent/40"
                         : "bg-white/5 border-white/10 hover:border-white/30"
-                  }`}
+                  )}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <div className={`font-bold text-sm ${judged ? 'text-muted-foreground' : 'text-white'}`}>{entry.teamName}</div>
-                    {judged && <Lock className="w-3 h-3 text-accent" />}
-                    {entry.top10Published && !judged && <Presentation className="w-3 h-3 text-accent animate-pulse" />}
+                    <div className={cn(
+                      "font-bold text-sm",
+                      isSelected ? "text-white" : judged ? "text-accent/80" : "text-white"
+                    )}>{entry.teamName}</div>
+                    {judged ? (
+                      <div className="flex items-center gap-1.5">
+                        <Edit3 className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Lock className="w-3 h-3 text-accent/50" />
+                      </div>
+                    ) : (
+                      entry.top10Published && <Presentation className="w-3 h-3 text-accent animate-pulse" />
+                    )}
                   </div>
                   <div className="text-[10px] text-muted-foreground uppercase">
-                    {judged ? "LOGGED & SECURED" : (entry.projectMembers?.[0]?.school || "Academic Center")}
+                    {judged ? "LOGGED • CLICK TO EDIT" : (entry.projectMembers?.[0]?.school || "Academic Center")}
                   </div>
                 </button>
               );
@@ -308,49 +374,59 @@ export default function JudgePage() {
 
                 <div className="w-full lg:w-[450px] glass-card p-8 rounded-2xl border-accent/30 shadow-glow sticky top-24 h-fit">
                   <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-                    <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Evaluation</h3>
+                    <h3 className="text-xl font-bold text-white uppercase tracking-tighter">
+                      {isJudged(selectedEntry.id) ? "Update Evaluation" : "New Evaluation"}
+                    </h3>
                     <Scale className="w-5 h-5 text-accent/50" />
                   </div>
                   
-                  <div className="space-y-10">
-                    {CRITERIA.map(crit => (
-                      <div key={crit.key} className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[11px] font-bold text-white uppercase tracking-wider">{crit.label}</label>
-                          <div className="flex items-center gap-2">
-                            <Input 
-                              type="number"
-                              placeholder="--"
-                              className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              value={(scores as any)[crit.key]}
-                              onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
-                            />
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase">/ {crit.max}</span>
+                  {isLoadingScores ? (
+                    <div className="py-20 flex flex-col items-center justify-center gap-4">
+                      <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Retrieving Logs...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-10">
+                      {CRITERIA.map(crit => (
+                        <div key={crit.key} className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <label className="text-[11px] font-bold text-white uppercase tracking-wider">{crit.label}</label>
+                            <div className="flex items-center gap-2">
+                              <Input 
+                                type="number"
+                                placeholder="--"
+                                className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                value={scores[crit.key]}
+                                onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
+                              />
+                              <span className="text-[10px] text-muted-foreground font-bold uppercase">/ {crit.max}</span>
+                            </div>
                           </div>
+                          <Slider 
+                            max={crit.max} 
+                            step={1} 
+                            value={[Number(scores[crit.key]) || 0]} 
+                            onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
+                          />
                         </div>
-                        <Slider 
-                          max={crit.max} 
-                          step={1} 
-                          value={[Number(scores[crit.key]) || 0]} 
-                          onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
+                      ))}
+
+                      <div className="space-y-2 pt-4">
+                        <label className="text-[11px] font-bold text-white uppercase tracking-wider">Confidential Comments</label>
+                        <Textarea 
+                          placeholder="Log observations for mission control..." 
+                          className="bg-black/20 border-white/10 h-28 text-sm focus:border-accent transition-colors"
+                          value={String(scores.comment)}
+                          onChange={e => setScores({...scores, comment: e.target.value})}
                         />
                       </div>
-                    ))}
 
-                    <div className="space-y-2 pt-4">
-                      <label className="text-[11px] font-bold text-white uppercase tracking-wider">Confidential Comments</label>
-                      <Textarea 
-                        placeholder="Log observations for mission control..." 
-                        className="bg-black/20 border-white/10 h-28 text-sm focus:border-accent transition-colors"
-                        value={String(scores.comment)}
-                        onChange={e => setScores({...scores, comment: e.target.value})}
-                      />
+                      <Button className="w-full bg-accent hover:bg-accent/80 py-7 text-white font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(51,153,255,0.2)]" onClick={handleSubmitScore}>
+                        <CheckCircle className="w-5 h-5 mr-3" /> 
+                        {isJudged(selectedEntry.id) ? "Update Transmission" : "Transmit Evaluation"}
+                      </Button>
                     </div>
-
-                    <Button className="w-full bg-accent hover:bg-accent/80 py-7 text-white font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(51,153,255,0.2)]" onClick={handleSubmitScore}>
-                      <CheckCircle className="w-5 h-5 mr-3" /> Transmit Evaluation
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
