@@ -206,9 +206,20 @@ export default function JudgePage() {
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
+  // Determine if we are in the Finalist Phase (any top10Published exists)
+  const isFinalistPhase = entries?.some(e => e.top10Published);
+
   // Filter and then sort: Unjudged first, Judged last
   const filteredEntries = (entries || [])
-    .filter(e => filter === "ALL" || e.challengeId === filter)
+    .filter(e => {
+      const matchesCategory = filter === "ALL" || e.challengeId === filter;
+      if (isFinalistPhase) {
+        // Only show published finalists with pitch decks
+        return matchesCategory && e.top10Published && e.pitchDeckLink;
+      }
+      // Standard phase: show all approved entries
+      return matchesCategory;
+    })
     .sort((a, b) => {
       const aJudged = isJudged(a.id);
       const bJudged = isJudged(b.id);
@@ -229,6 +240,13 @@ export default function JudgePage() {
           </div>
 
           <div className="space-y-4 mb-6">
+            <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
+              <p className="text-[10px] text-accent font-black uppercase tracking-widest flex items-center gap-2">
+                <Filter className="w-3 h-3" /> 
+                Phase: {isFinalistPhase ? "Finalist Round" : "Standard Selection"}
+              </p>
+            </div>
+
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="bg-white/5 border-white/10 h-10 text-[10px] uppercase font-bold tracking-widest text-white">
                 <div className="flex items-center gap-2">
@@ -259,6 +277,10 @@ export default function JudgePage() {
           <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-2">
             {isEntriesLoading ? (
               <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+            ) : filteredEntries.length === 0 ? (
+              <div className="p-8 text-center glass-card rounded-lg border-dashed border-2 border-white/5">
+                <p className="text-[9px] text-muted-foreground uppercase italic">No signals in range</p>
+              </div>
             ) : filteredEntries.map(entry => {
               const judged = isJudged(entry.id);
               const isSelected = selectedEntry?.id === entry.id;
