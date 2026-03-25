@@ -81,7 +81,6 @@ export default function JudgePage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Load existing scores when an entry is selected
   useEffect(() => {
     async function loadExistingScores() {
       if (!selectedEntry || !user || !db) return;
@@ -207,7 +206,16 @@ export default function JudgePage() {
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
-  const filteredEntries = (entries || []).filter(e => filter === "ALL" || e.challengeId === filter);
+  // Filter and then sort: Unjudged first, Judged last
+  const filteredEntries = (entries || [])
+    .filter(e => filter === "ALL" || e.challengeId === filter)
+    .sort((a, b) => {
+      const aJudged = isJudged(a.id);
+      const bJudged = isJudged(b.id);
+      if (aJudged === bJudged) return 0;
+      return aJudged ? 1 : -1;
+    });
+
   const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";
 
   return (
