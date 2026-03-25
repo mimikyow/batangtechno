@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github } from "lucide-react";
@@ -19,24 +20,28 @@ const CRITERIA = [
     key: "mastery", 
     label: "Mastery and Use of Software Concepts", 
     weight: "30%", 
+    max: 30,
     desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution. Emphasis is placed on overall quality, efficiency, and appropriate use of available tools and resources." 
   },
   { 
     key: "innovation", 
     label: "Novelty and Innovation", 
     weight: "30%", 
+    max: 30,
     desc: "Assesses the originality of the project and the creativity behind its concept and implementation. This includes how the solution introduces new ideas, improves existing approaches, or applies technology in a unique and meaningful way." 
   },
   { 
     key: "impact", 
     label: "Real-world Impact and Viability", 
     weight: "30%", 
+    max: 30,
     desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment. Consideration is given to feasibility, scalability, sustainability, and the overall benefit to users or communities." 
   },
   { 
     key: "compliance", 
     label: "Compliance to Rules and Restrictions", 
     weight: "10%", 
+    max: 10,
     desc: "Determines the extent to which the project follows all competition guidelines, technical constraints, ethical standards, and submission requirements. Failure to comply may result in point deductions or disqualification." 
   },
 ];
@@ -59,9 +64,9 @@ export default function JudgePage() {
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [scores, setScores] = useState({
-    mastery: 5,
-    innovation: 5,
-    impact: 5,
+    mastery: 15,
+    innovation: 15,
+    impact: 15,
     compliance: 5,
     comment: ""
   });
@@ -109,6 +114,18 @@ export default function JudgePage() {
     }
   };
 
+  const handleScoreChange = (key: string, val: string | number, max: number) => {
+    let numericValue = typeof val === 'string' ? parseInt(val) : val;
+    if (isNaN(numericValue)) numericValue = 0;
+    if (numericValue > max) numericValue = max;
+    if (numericValue < 0) numericValue = 0;
+    
+    setScores(prev => ({
+      ...prev,
+      [key]: numericValue
+    }));
+  };
+
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
@@ -117,7 +134,12 @@ export default function JudgePage() {
     setDocumentNonBlocking(scoreRef, {
       judgeId: user.uid,
       entryId: selectedEntry.id,
-      scores,
+      scores: {
+        mastery: scores.mastery,
+        innovation: scores.innovation,
+        impact: scores.impact,
+        compliance: scores.compliance
+      },
       submissionDate: new Date().toISOString(),
       adminUploaded: false,
       comment: scores.comment
@@ -131,7 +153,7 @@ export default function JudgePage() {
 
     toast({ title: "Evaluation Synchronized" });
     setSelectedEntry(null);
-    setScores({ mastery: 5, innovation: 5, impact: 5, compliance: 5, comment: "" });
+    setScores({ mastery: 15, innovation: 15, impact: 15, compliance: 5, comment: "" });
   };
 
   const isJudged = (entryId: string) => {
@@ -283,16 +305,21 @@ export default function JudgePage() {
                       <div key={crit.key} className="space-y-4">
                         <div className="flex justify-between items-center">
                           <label className="text-[11px] font-bold text-white uppercase tracking-wider">{crit.label}</label>
-                          <div className="flex flex-col items-end">
-                            <span className="text-accent font-mono text-2xl font-bold leading-none">{(scores as any)[crit.key]}</span>
-                            <span className="text-[9px] text-muted-foreground font-bold">/ 10</span>
+                          <div className="flex items-center gap-2">
+                            <Input 
+                              type="number"
+                              className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold"
+                              value={(scores as any)[crit.key]}
+                              onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
+                            />
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase">/ {crit.max}</span>
                           </div>
                         </div>
                         <Slider 
-                          max={10} 
+                          max={crit.max} 
                           step={1} 
                           value={[(scores as any)[crit.key]]} 
-                          onValueChange={(val) => setScores({...scores, [crit.key]: val[0]})}
+                          onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
                         />
                       </div>
                     ))}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -243,9 +242,10 @@ export default function AdminPage() {
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.scores) {
+            // Scores are now already weighted points (out of 30 or 10)
             const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
-            const weightedAvg = (mastery * 0.3) + (innovation * 0.3) + (impact * 0.3) + (compliance * 0.1);
-            totalWeightedScore += weightedAvg;
+            const weightedSum = mastery + innovation + impact + compliance;
+            totalWeightedScore += weightedSum;
             submissionCount++;
           }
         });
