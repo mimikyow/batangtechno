@@ -63,11 +63,11 @@ export default function JudgePage() {
 
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [scores, setScores] = useState({
-    mastery: 15,
-    innovation: 15,
-    impact: 15,
-    compliance: 5,
+  const [scores, setScores] = useState<Record<string, string | number>>({
+    mastery: "",
+    innovation: "",
+    impact: "",
+    compliance: "",
     comment: ""
   });
 
@@ -115,6 +115,11 @@ export default function JudgePage() {
   };
 
   const handleScoreChange = (key: string, val: string | number, max: number) => {
+    if (val === "") {
+      setScores(prev => ({ ...prev, [key]: "" }));
+      return;
+    }
+
     let numericValue = typeof val === 'string' ? parseInt(val) : val;
     if (isNaN(numericValue)) numericValue = 0;
     if (numericValue > max) numericValue = max;
@@ -129,16 +134,23 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
+    // Validate that all scores are filled
+    const missing = CRITERIA.find(c => scores[c.key] === "");
+    if (missing) {
+      toast({ variant: "destructive", title: "Incomplete Mission", description: `Please provide a score for ${missing.label}.` });
+      return;
+    }
+
     const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
     
     setDocumentNonBlocking(scoreRef, {
       judgeId: user.uid,
       entryId: selectedEntry.id,
       scores: {
-        mastery: scores.mastery,
-        innovation: scores.innovation,
-        impact: scores.impact,
-        compliance: scores.compliance
+        mastery: Number(scores.mastery),
+        innovation: Number(scores.innovation),
+        impact: Number(scores.impact),
+        compliance: Number(scores.compliance)
       },
       submissionDate: new Date().toISOString(),
       adminUploaded: false,
@@ -153,7 +165,7 @@ export default function JudgePage() {
 
     toast({ title: "Evaluation Synchronized" });
     setSelectedEntry(null);
-    setScores({ mastery: 15, innovation: 15, impact: 15, compliance: 5, comment: "" });
+    setScores({ mastery: "", innovation: "", impact: "", compliance: "", comment: "" });
   };
 
   const isJudged = (entryId: string) => {
@@ -308,7 +320,8 @@ export default function JudgePage() {
                           <div className="flex items-center gap-2">
                             <Input 
                               type="number"
-                              className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold"
+                              placeholder="--"
+                              className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               value={(scores as any)[crit.key]}
                               onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
                             />
@@ -318,7 +331,7 @@ export default function JudgePage() {
                         <Slider 
                           max={crit.max} 
                           step={1} 
-                          value={[(scores as any)[crit.key]]} 
+                          value={[Number(scores[crit.key]) || 0]} 
                           onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
                         />
                       </div>
@@ -329,7 +342,7 @@ export default function JudgePage() {
                       <Textarea 
                         placeholder="Log observations for mission control..." 
                         className="bg-black/20 border-white/10 h-28 text-sm focus:border-accent transition-colors"
-                        value={scores.comment}
+                        value={String(scores.comment)}
                         onChange={e => setScores({...scores, comment: e.target.value})}
                       />
                     </div>
