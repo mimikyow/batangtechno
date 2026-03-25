@@ -351,7 +351,7 @@ export default function JudgePage() {
                         {CRITERIA.map(crit => (
                           <div key={crit.key} className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-[11px] font-bold text-white uppercase">{crit.label}</h4>
+                              <h4 className="text-sm font-bold text-white uppercase">{crit.label}</h4>
                               <Badge variant="outline" className="text-[9px] border-accent/30 text-accent">{crit.weight}</Badge>
                             </div>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">{crit.desc}</p>
@@ -390,7 +390,7 @@ export default function JudgePage() {
                       {CRITERIA.map(crit => (
                         <div key={crit.key} className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <label className="text-[11px] font-bold text-white uppercase tracking-wider">{crit.label}</label>
+                            <label className="text-sm font-bold text-white uppercase tracking-wider">{crit.label}</label>
                             <div className="flex items-center gap-2">
                               <Input 
                                 type="number"
@@ -412,7 +412,7 @@ export default function JudgePage() {
                       ))}
 
                       <div className="space-y-2 pt-4">
-                        <label className="text-[11px] font-bold text-white uppercase tracking-wider">Confidential Comments</label>
+                        <label className="text-sm font-bold text-white uppercase tracking-wider">Confidential Comments</label>
                         <Textarea 
                           placeholder="Log observations for mission control..." 
                           className="bg-black/20 border-white/10 h-28 text-sm focus:border-accent transition-colors"
