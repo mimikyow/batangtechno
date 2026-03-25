@@ -7,9 +7,7 @@ import { CHALLENGES } from "@/lib/constants";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter, Loader2, Trophy, Rocket, Star, Code, ChevronDown } from "lucide-react";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { Search, Filter, Loader2, Trophy, Rocket, Star, Code } from "lucide-react";
 import Image from "next/image";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 
@@ -69,9 +67,6 @@ export default function Home() {
           <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-light max-w-4xl mx-auto leading-relaxed tracking-[0.1em] sm:tracking-[0.3em] px-4">
             Building the Minds of Tomorrow's Innovators
           </p>
-          <div className="mt-8 sm:mt-12 animate-bounce">
-            <ChevronDown className="w-6 h-6 text-accent/50" />
-          </div>
         </div>
       </section>
 
@@ -228,3 +223,6 @@ export default function Home() {
     </div>
   );
 }
+
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
