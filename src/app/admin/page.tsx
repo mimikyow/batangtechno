@@ -102,7 +102,10 @@ export default function AdminPage() {
       
       snapshot.forEach((doc) => {
         const data = doc.data();
-        const judge = judges?.find(j => j.id === data.judgeId);
+        // The document ID in the scoreSubmissions collection is the judge's UID
+        const judgeId = data.judgeId || doc.id;
+        const judge = (judges || []).find(j => j.id === judgeId);
+        
         scores.push({
           ...data,
           judgeName: judge?.name || "Unknown Judge"
@@ -242,7 +245,6 @@ export default function AdminPage() {
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.scores) {
-            // Scores are now already weighted points (out of 30 or 10)
             const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
             const weightedSum = mastery + innovation + impact + compliance;
             totalWeightedScore += weightedSum;
@@ -594,7 +596,7 @@ export default function AdminPage() {
                       )}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[9px] uppercase text-muted-foreground">Name</label>
+                          <label className="text-9px uppercase text-muted-foreground">Name</label>
                           <Input className="h-8 text-sm" value={member.name} onChange={e => {
                             const m = [...newEntry.projectMembers];
                             m[idx].name = e.target.value;
@@ -602,7 +604,7 @@ export default function AdminPage() {
                           }} />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[9px] uppercase text-muted-foreground">School</label>
+                          <label className="text-9px uppercase text-muted-foreground">School</label>
                           <Input className="h-8 text-sm" value={member.school} onChange={e => {
                             const m = [...newEntry.projectMembers];
                             m[idx].school = e.target.value;
@@ -611,7 +613,7 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[9px] uppercase text-muted-foreground">School Logo URL</label>
+                        <label className="text-9px uppercase text-muted-foreground">School Logo URL</label>
                         <Input className="h-8 text-sm" value={member.schoolLogoUrl} onChange={e => {
                           const m = [...newEntry.projectMembers];
                           m[idx].schoolLogoUrl = e.target.value;
