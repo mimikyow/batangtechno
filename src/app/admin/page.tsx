@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { CHALLENGES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2, School } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +86,17 @@ export default function AdminPage() {
 
   const [editingPitchLink, setEditingPitchLink] = useState<{id: string, url: string} | null>(null);
 
+  const schoolDistribution = useMemo(() => {
+    const dist: Record<string, number> = {};
+    entries?.forEach(entry => {
+      entry.projectMembers?.forEach((member: any) => {
+        const name = member.school?.trim();
+        if (name) dist[name] = (dist[name] || 0) + 1;
+      });
+    });
+    return Object.entries(dist).sort((a, b) => b[1] - a[1]);
+  }, [entries]);
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login");
@@ -102,7 +113,6 @@ export default function AdminPage() {
       
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // The document ID in the scoreSubmissions collection is the judge's UID
         const judgeId = data.judgeId || doc.id;
         const judge = (judges || []).find(j => j.id === judgeId);
         
@@ -852,6 +862,30 @@ export default function AdminPage() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      <div className="glass-card rounded-xl overflow-hidden mb-12">
+        <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+          <h2 className="font-bold uppercase text-xs tracking-widest text-accent flex items-center gap-2">
+            <School className="w-4 h-4" /> Institutional Reach
+          </h2>
+          <Badge variant="outline" className="text-[10px] border-white/10 text-muted-foreground uppercase">
+            {schoolDistribution.length} Missions Active
+          </Badge>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+          {schoolDistribution.map(([school, count]) => (
+            <div key={school} className="p-4 bg-white/5 rounded-lg border border-white/10 flex items-center gap-4">
+               <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20">
+                 <School className="w-5 h-5 text-accent" />
+               </div>
+               <div className="flex flex-col">
+                 <span className="text-sm font-bold text-white truncate max-w-[150px]">{school}</span>
+                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{count} Students</span>
+               </div>
+            </div>
+          ))}
         </div>
       </div>
 
