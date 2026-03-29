@@ -1,21 +1,22 @@
+
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CHALLENGES } from "@/lib/constants";
+import { CHALLENGES, STANDARD_CRITERIA, FINALS_CRITERIA } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2, Star, RefreshCw, Power } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Edit2, Users, CheckCircle2, Star, RefreshCw, Power, Settings2, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection, getDocs, setDoc, writeBatch, deleteDoc } from "firebase/firestore";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { useUser, useFirestore, useMemoFirebase, useCollection, useAuth, useDoc } from "@/firebase";
+import { doc, collection, getDocs, setDoc, writeBatch } from "firebase/firestore";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseConfig } from "@/firebase/config";
@@ -23,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export default function AdminPage() {
-  const { user, isUserLoading } = userHook();
+  const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
@@ -38,8 +39,10 @@ export default function AdminPage() {
   const judgesQuery = useMemoFirebase(() => collection(db, "roles_judge"), [db]);
   const { data: judges } = useCollection(judgesQuery);
 
-  const progWinnersQuery = useMemoFirebase(() => collection(db, "programming_winners"), [db]);
-  const { data: progWinners } = useCollection(progWinnersQuery);
+  const configRef = useMemoFirebase(() => doc(db, "settings", "judging"), [db]);
+  const { data: appConfig } = useDoc(configRef);
+
+  const activeCriteria = appConfig?.phase === 'FINALS' ? FINALS_CRITERIA : STANDARD_CRITERIA;
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -94,6 +97,14 @@ export default function AdminPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const handleSwitchPhase = (phase: 'STANDARD' | 'FINALS') => {
+    setDocumentNonBlocking(doc(db, "settings", "judging"), { phase }, { merge: true });
+    toast({ 
+      title: `Judicial Phase Updated`, 
+      description: `Active Matrix: ${phase === 'FINALS' ? 'Finals Round' : 'Standard Round'}` 
+    });
+  };
+
   const handleViewScores = async (entry: any) => {
     setViewingEntry(entry);
     setIsLoadingScores(true);
@@ -136,14 +147,15 @@ export default function AdminPage() {
           batch.delete(doc.ref);
         });
         await batch.commit();
-
-        // Also reset judge progress
-        for (const judge of (judges || [])) {
-          updateDocumentNonBlocking(doc(db, "roles_judge", judge.id), {
-            judgedEntries: []
-          });
-        }
       }
+
+      // Also reset judge progress
+      for (const judge of (judges || [])) {
+        updateDocumentNonBlocking(doc(db, "roles_judge", judge.id), {
+          judgedEntries: []
+        });
+      }
+      
       toast({ title: "Mission Reset Complete", description: "All preliminary evaluations purged." });
     } catch (error) {
       toast({ variant: "destructive", title: "Purge Failed" });
@@ -237,34 +249,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleAddProgWinner = () => {
-    if (!newProgWinner.name || !newProgWinner.school || !newProgWinner.pictureUrl || !newProgWinner.schoolLogoUrl) {
-      toast({ variant: "destructive", title: "Incomplete Fields", description: "All fields are required." });
-      return;
-    }
-
-    addDocumentNonBlocking(collection(db, "programming_winners"), {
-      ...newProgWinner,
-      dateAdded: new Date().toISOString()
-    });
-
-    setIsAddingProgWinner(false);
-    setNewProgWinner({
-      name: "",
-      school: "",
-      pictureUrl: "",
-      schoolLogoUrl: "",
-      place: 1,
-      category: "COLLEGE"
-    });
-    toast({ title: "Programming Winner Deployed" });
-  };
-
-  const handleDeleteProgWinner = (id: string) => {
-    deleteDocumentNonBlocking(doc(db, "programming_winners", id));
-    toast({ title: "Winner Record Deleted" });
-  };
-
   const handleProcessLeaderboard = async (type: "TOP12" | "TOP3") => {
     if (!entries || entries.length === 0) return;
     
@@ -284,9 +268,8 @@ export default function AdminPage() {
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.scores) {
-            const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
-            const weightedSum = mastery + innovation + impact + compliance;
-            totalWeightedScore += weightedSum;
+            const sum = Object.values(data.scores).reduce((a: any, b: any) => a + b, 0) as number;
+            totalWeightedScore += sum;
             submissionCount++;
           }
         });
@@ -427,15 +410,7 @@ export default function AdminPage() {
     toast({ title: "Entry Deleted" });
   };
 
-  const isPlaceTaken = (cat: "HIGH_SCHOOL" | "COLLEGE", place: number) => {
-    return progWinners?.some(w => w.category === cat && w.place === place);
-  };
-
   const totalEntries = entries?.length || 0;
-
-  function userHook() {
-    return useUser();
-  }
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -458,6 +433,31 @@ export default function AdminPage() {
         </div>
         
         <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-1.5 rounded-lg">
+            <Badge variant="outline" className={cn(
+              "uppercase text-[10px] tracking-widest border-none px-3",
+              appConfig?.phase === 'FINALS' ? "text-accent" : "text-white"
+            )}>
+              {appConfig?.phase === 'FINALS' ? "Finalist Round Active" : "Standard Round Active"}
+            </Badge>
+            <Button 
+              size="sm" 
+              variant={appConfig?.phase === 'FINALS' ? "outline" : "default"}
+              onClick={() => handleSwitchPhase('STANDARD')}
+              className="h-7 text-[9px] uppercase font-black"
+            >
+              Standard
+            </Button>
+            <Button 
+              size="sm" 
+              variant={appConfig?.phase === 'FINALS' ? "default" : "outline"}
+              onClick={() => handleSwitchPhase('FINALS')}
+              className="h-7 text-[9px] uppercase font-black bg-accent hover:bg-accent/80"
+            >
+              Finals
+            </Button>
+          </div>
+
           <Button 
             variant="outline" 
             onClick={handlePurgeAllScores}
@@ -467,85 +467,6 @@ export default function AdminPage() {
             {isPurging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
             Reset Evaluations
           </Button>
-
-          <Dialog open={isAddingProgWinner} onOpenChange={setIsAddingProgWinner}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 hover:text-white uppercase text-xs font-bold tracking-widest">
-                <Medal className="w-4 h-4 mr-2" /> Programming Elite
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card border-border overflow-y-auto max-h-[90vh]">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold uppercase italic">Manage Programming Elite</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-4 border-b border-white/10 pb-6">
-                  <h4 className="text-[10px] font-bold uppercase text-accent tracking-widest">Assign New Winner</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase text-muted-foreground">Name</label>
-                      <Input value={newProgWinner.name} onChange={e => setNewProgWinner({...newProgWinner, name: e.target.value})} />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase text-muted-foreground">School</label>
-                      <Input value={newProgWinner.school} onChange={e => setNewProgWinner({...newProgWinner, school: e.target.value})} />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase text-muted-foreground">Profile Picture URL</label>
-                    <Input value={newProgWinner.pictureUrl} onChange={e => setNewProgWinner({...newProgWinner, pictureUrl: e.target.value})} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase text-muted-foreground">School Logo URL</label>
-                    <Input value={newProgWinner.schoolLogoUrl} onChange={e => setNewProgWinner({...newProgWinner, schoolLogoUrl: e.target.value})} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase text-muted-foreground">Category</label>
-                      <Select value={newProgWinner.category} onValueChange={(v: any) => setNewProgWinner({...newProgWinner, category: v})}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="HIGH_SCHOOL">High School</SelectItem>
-                          <SelectItem value="COLLEGE">College</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase text-muted-foreground">Place</label>
-                      <Select value={newProgWinner.place.toString()} onValueChange={(v) => setNewProgWinner({...newProgWinner, place: parseInt(v) as 1|2|3})}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1" disabled={isPlaceTaken(newProgWinner.category, 1)}>1st Place</SelectItem>
-                          <SelectItem value="2" disabled={isPlaceTaken(newProgWinner.category, 2)}>2nd Place</SelectItem>
-                          <SelectItem value="3" disabled={isPlaceTaken(newProgWinner.category, 3)}>3rd Place</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Button className="w-full bg-accent uppercase text-xs font-bold" onClick={handleAddProgWinner}>Add Winner</Button>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-bold uppercase text-accent tracking-widest">Active Records</h4>
-                  <ScrollArea className="h-48">
-                    <div className="space-y-2">
-                      {progWinners?.map(w => (
-                        <div key={w.id} className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/5">
-                          <div>
-                            <div className="text-xs font-bold text-white">{w.name} <span className="text-[9px] text-accent ml-2">#{w.place} ({w.category === 'COLLEGE' ? 'College' : 'HS'})</span></div>
-                            <div className="text-[9px] text-muted-foreground uppercase">{w.school}</div>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteProgWinner(w.id)}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           <Dialog open={isAddingJudge} onOpenChange={setIsAddingJudge}>
             <DialogTrigger asChild>
@@ -984,10 +905,10 @@ export default function AdminPage() {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {['mastery', 'innovation', 'impact', 'compliance'].map(key => (
-                          <div key={key} className="p-3 bg-black/20 rounded-lg text-center">
-                            <div className="text-[9px] uppercase text-muted-foreground mb-1">{key}</div>
-                            <div className="text-xl font-bold text-white">{score.scores?.[key] || 0}</div>
+                        {activeCriteria.map(crit => (
+                          <div key={crit.key} className="p-3 bg-black/20 rounded-lg text-center">
+                            <div className="text-[9px] uppercase text-muted-foreground mb-1">{crit.label}</div>
+                            <div className="text-xl font-bold text-white">{score.scores?.[crit.key] ?? 0}</div>
                           </div>
                         ))}
                       </div>
@@ -1006,8 +927,4 @@ export default function AdminPage() {
       </Dialog>
     </div>
   );
-}
-
-function userHook() {
-  return useUser();
 }

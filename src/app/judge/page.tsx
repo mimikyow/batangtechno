@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,38 +16,7 @@ import { doc, collection, arrayUnion, getDoc } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { getGoogleDriveEmbedUrl, cn } from "@/lib/utils";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { CHALLENGES } from "@/lib/constants";
-
-const CRITERIA = [
-  { 
-    key: "mastery", 
-    label: "Mastery and Use of Software Concepts", 
-    weight: "30%", 
-    max: 30,
-    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution. Emphasis is placed on overall quality, efficiency, and appropriate use of available tools and resources." 
-  },
-  { 
-    key: "innovation", 
-    label: "Novelty and Innovation", 
-    weight: "30%", 
-    max: 30,
-    desc: "Assesses the originality of the project and the creativity behind its concept and implementation. This includes how the solution introduces new ideas, improves existing approaches, or applies technology in a unique and meaningful way." 
-  },
-  { 
-    key: "impact", 
-    label: "Real-world Impact and Viability", 
-    weight: "30%", 
-    max: 30,
-    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment. Consideration is given to feasibility, scalability, sustainability, and the overall benefit to users or communities." 
-  },
-  { 
-    key: "compliance", 
-    label: "Compliance to Rules and Restrictions", 
-    weight: "10%", 
-    max: 10,
-    desc: "Determines the extent to which the project follows all competition guidelines, technical constraints, ethical standards, and submission requirements. Failure to comply may result in point deductions or disqualification." 
-  },
-];
+import { CHALLENGES, STANDARD_CRITERIA, FINALS_CRITERIA } from "@/lib/constants";
 
 const COMPLIANCE_DETAILS = "The video must showcase the working prototype, emphasizing its key features and functionality. It should briefly explain the problem, the proposed solution, and its real-world application. Teams must also clearly identify the technologies used, including programming languages, frameworks, libraries, platforms, APIs, and any AI tools. The presentation should reflect the actual state of the prototype—purely conceptual or slide-only videos may receive lower scores. The video length should be 3–5 minutes; failure to meet this may result in deductions.";
 
@@ -60,6 +30,9 @@ export default function JudgePage() {
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
   const { data: judgeRole, isLoading: isJudgeChecking } = useDoc(judgeDocRef);
 
+  const configRef = useMemoFirebase(() => doc(db, "settings", "judging"), [db]);
+  const { data: appConfig } = useDoc(configRef);
+
   const entriesQuery = useMemoFirebase(() => collection(db, "entries"), [db]);
   const { data: entries, isLoading: isEntriesLoading } = useCollection(entriesQuery);
 
@@ -67,11 +40,10 @@ export default function JudgePage() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [isLoadingScores, setIsLoadingScores] = useState(false);
+
+  const activeCriteria = appConfig?.phase === 'FINALS' ? FINALS_CRITERIA : STANDARD_CRITERIA;
+
   const [scores, setScores] = useState<Record<string, string | number>>({
-    mastery: "",
-    innovation: "",
-    impact: "",
-    compliance: "",
     comment: ""
   });
 
@@ -90,18 +62,17 @@ export default function JudgePage() {
         const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
         const snapshot = await getDoc(scoreRef);
         
+        const initialScores: Record<string, any> = { comment: "" };
+        activeCriteria.forEach(c => initialScores[c.key] = "");
+
         if (snapshot.exists()) {
           const data = snapshot.data();
-          setScores({
-            mastery: data.scores?.mastery ?? "",
-            innovation: data.scores?.innovation ?? "",
-            impact: data.scores?.impact ?? "",
-            compliance: data.scores?.compliance ?? "",
-            comment: data.comment ?? ""
+          activeCriteria.forEach(c => {
+            initialScores[c.key] = data.scores?.[c.key] ?? "";
           });
-        } else {
-          setScores({ mastery: "", innovation: "", impact: "", compliance: "", comment: "" });
+          initialScores.comment = data.comment ?? "";
         }
+        setScores(initialScores);
       } catch (error) {
         console.error("Error loading scores:", error);
       } finally {
@@ -110,7 +81,7 @@ export default function JudgePage() {
     }
 
     loadExistingScores();
-  }, [selectedEntry, user, db]);
+  }, [selectedEntry, user, db, activeCriteria]);
 
   if (isUserLoading || isJudgeChecking) {
     return (
@@ -136,7 +107,6 @@ export default function JudgePage() {
     );
   }
 
-  // Handle Deactivated Judge
   if (judgeRole.isActive === false) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
@@ -144,7 +114,7 @@ export default function JudgePage() {
           <PowerOff className="w-10 h-10 text-destructive" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Session Suspended</h1>
-        <p className="text-muted-foreground max-w-md mb-8">Your access has been temporarily deactivated by the Mission Command. Please contact system administrators.</p>
+        <p className="text-muted-foreground max-w-md mb-8">Your access has been temporarily deactivated by the Mission Command.</p>
         <Button onClick={() => router.push("/")} variant="outline" className="border-white/20 hover:text-white">
           Return to Public Board
         </Button>
@@ -185,7 +155,7 @@ export default function JudgePage() {
   const handleSubmitScore = () => {
     if (!user || !selectedEntry) return;
 
-    const missing = CRITERIA.find(c => scores[c.key] === "");
+    const missing = activeCriteria.find(c => scores[c.key] === "");
     if (missing) {
       toast({ variant: "destructive", title: "Incomplete Mission", description: `Please provide a score for ${missing.label}.` });
       return;
@@ -193,18 +163,19 @@ export default function JudgePage() {
 
     const scoreRef = doc(db, "entries", selectedEntry.id, "scoreSubmissions", user.uid);
     
+    const submissionData: Record<string, number> = {};
+    activeCriteria.forEach(c => {
+      submissionData[c.key] = Number(scores[c.key]);
+    });
+
     setDocumentNonBlocking(scoreRef, {
       judgeId: user.uid,
       entryId: selectedEntry.id,
-      scores: {
-        mastery: Number(scores.mastery),
-        innovation: Number(scores.innovation),
-        impact: Number(scores.impact),
-        compliance: Number(scores.compliance)
-      },
+      scores: submissionData,
       submissionDate: new Date().toISOString(),
       adminUploaded: false,
-      comment: scores.comment
+      comment: scores.comment,
+      phase: appConfig?.phase || 'STANDARD'
     }, { merge: true });
 
     if (judgeDocRef) {
@@ -215,25 +186,20 @@ export default function JudgePage() {
 
     toast({ title: "Evaluation Synchronized" });
     setSelectedEntry(null);
-    setScores({ mastery: "", innovation: "", impact: "", compliance: "", comment: "" });
   };
 
   const isJudged = (entryId: string) => {
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
-  // Determine if we are in the Finalist Phase (any top10Published exists)
-  const isFinalistPhase = entries?.some(e => e.top10Published);
+  const isFinalistPhaseInApp = entries?.some(e => e.top10Published);
 
-  // Filter and then sort: Unjudged first, Judged last
   const filteredEntries = (entries || [])
     .filter(e => {
       const matchesCategory = filter === "ALL" || e.challengeId === filter;
-      if (isFinalistPhase) {
-        // Only show published finalists with pitch decks
+      if (isFinalistPhaseInApp) {
         return matchesCategory && e.top10Published && e.pitchDeckLink;
       }
-      // Standard phase: show all approved entries
       return matchesCategory;
     })
     .sort((a, b) => {
@@ -259,7 +225,7 @@ export default function JudgePage() {
             <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
               <p className="text-[10px] text-accent font-black uppercase tracking-widest flex items-center gap-2">
                 <Filter className="w-3 h-3" /> 
-                Phase: {isFinalistPhase ? "Finalist Round" : "Standard Selection"}
+                Phase: {appConfig?.phase === 'FINALS' ? "Final Frontier" : "Standard Selection"}
               </p>
             </div>
 
@@ -319,14 +285,7 @@ export default function JudgePage() {
                       "font-bold text-sm",
                       isSelected ? "text-white" : judged ? "text-accent/80" : "text-white"
                     )}>{entry.teamName}</div>
-                    {judged ? (
-                      <div className="flex items-center gap-1.5">
-                        <Edit3 className="w-3 h-3 text-accent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <Lock className="w-3 h-3 text-accent/50" />
-                      </div>
-                    ) : (
-                      entry.top10Published && <Presentation className="w-3 h-3 text-accent animate-pulse" />
-                    )}
+                    {judged && <Lock className="w-3 h-3 text-accent/50" />}
                   </div>
                   <div className="text-[10px] text-muted-foreground uppercase">
                     {judged ? "LOGGED • CLICK TO EDIT" : (entry.projectMembers?.[0]?.school || "Academic Center")}
@@ -391,10 +350,10 @@ export default function JudgePage() {
 
                     <div className="glass-card p-6 rounded-xl">
                       <h3 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-xs">
-                        <Scale className="w-4 h-4 text-accent" /> Matrix Guide
+                        <Scale className="w-4 h-4 text-accent" /> Matrix Guide ({appConfig?.phase === 'FINALS' ? 'FINALS' : 'STANDARD'})
                       </h3>
                       <div className="space-y-6">
-                        {CRITERIA.map(crit => (
+                        {activeCriteria.map(crit => (
                           <div key={crit.key} className="space-y-2">
                             <div className="flex items-center justify-between">
                               <h4 className="text-sm font-bold text-white uppercase">{crit.label}</h4>
@@ -406,9 +365,7 @@ export default function JudgePage() {
                                 <h5 className="text-[9px] font-bold text-accent uppercase mb-1 flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3" /> Mandatory Requirements
                                 </h5>
-                                <p className="text-[9px] text-slate-400 italic leading-snug">
-                                  {COMPLIANCE_DETAILS}
-                                </p>
+                                <p className="text-[9px] text-slate-400 italic leading-snug">{COMPLIANCE_DETAILS}</p>
                               </div>
                             )}
                           </div>
@@ -433,7 +390,7 @@ export default function JudgePage() {
                     </div>
                   ) : (
                     <div className="space-y-10">
-                      {CRITERIA.map(crit => (
+                      {activeCriteria.map(crit => (
                         <div key={crit.key} className="space-y-4">
                           <div className="flex justify-between items-center">
                             <label className="text-sm font-bold text-white uppercase tracking-wider">{crit.label}</label>
@@ -482,7 +439,7 @@ export default function JudgePage() {
                 <AlertCircle className="w-10 h-10 text-accent" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2 uppercase italic tracking-tighter">Awaiting Signal Selection</h2>
-              <p className="text-muted-foreground max-w-xs text-xs uppercase tracking-widest leading-relaxed">Select a mission project from the mission log to begin decryption and evaluation.</p>
+              <p className="text-muted-foreground max-w-xs text-xs uppercase tracking-widest leading-relaxed">Select a mission project to begin evaluation.</p>
             </div>
           )}
         </div>

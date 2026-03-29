@@ -10,48 +10,64 @@ export const CHALLENGES: Challenge[] = [
   "SUSTAINABLE AGRICULTURE"
 ];
 
-export const MOCK_ENTRIES: any[] = [
-  {
-    id: "1",
-    teamName: "Galactic Coders",
-    school: "Techno University",
-    members: [{id: '1', name: 'Alice'}, {id: '2', name: 'Bob'}, {id: '3', name: 'Charlie'}],
-    videoLink: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    thumbnailUrl: "https://picsum.photos/seed/smart/800/600",
-    description: "A revolutionary way to manage space debris using AI-driven orbital mechanics.",
-    challenge: "SMART MOBILITY AND TRANSPORTATION",
-    rank: 1,
+export const STANDARD_CRITERIA = [
+  { 
+    key: "mastery", 
+    label: "Mastery and Use of Software Concepts", 
+    weight: "30%", 
+    max: 30, 
+    desc: "Evaluates how effectively the team applies relevant concepts, techniques, and technologies to develop a functional and well-designed solution." 
   },
-  {
-    id: "2",
-    teamName: "Nebula Innovators",
-    school: "State College of Arts",
-    members: [{id: '4', name: 'David'}, {id: '5', name: 'Eve'}, {id: '6', name: 'Frank'}],
-    videoLink: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    thumbnailUrl: "https://picsum.photos/seed/health/800/600",
-    description: "Decentralized health records for remote communities using secure blockchain protocols.",
-    challenge: "HEALTHCARE ACCESS FOR RURAL AND REMOTE COMMUNITIES",
-    rank: 2,
+  { 
+    key: "innovation", 
+    label: "Novelty and Innovation", 
+    weight: "30%", 
+    max: 30, 
+    desc: "Assesses the originality of the project and the creativity behind its concept and implementation." 
   },
-  {
-    id: "3",
-    teamName: "Star Growers",
-    school: "Agri Tech Institute",
-    members: [{id: '7', name: 'Grace'}, {id: '8', name: 'Heidi'}, {id: '9', name: 'Ivan'}],
-    videoLink: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    thumbnailUrl: "https://picsum.photos/seed/farm/800/600",
-    description: "Smart irrigation systems that use satellite data to optimize water usage in arid zones.",
-    challenge: "SUSTAINABLE AGRICULTURE",
-    rank: 3,
+  { 
+    key: "impact", 
+    label: "Real-world Impact and Viability", 
+    weight: "30%", 
+    max: 30, 
+    desc: "Measures how relevant the project is to real-world problems and its potential for practical deployment." 
   },
-  {
-    id: "4",
-    teamName: "Truth Seeker",
-    school: "Digital Academy",
-    members: [{id: '10', name: 'John'}, {id: '11', name: 'Kelly'}, {id: '12', name: 'Liam'}],
-    videoLink: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    thumbnailUrl: "https://picsum.photos/seed/disinfo/800/600",
-    description: "AI browser extension that detects disinformation in real-time.",
-    challenge: "DIGITAL LITERACY AND COMBATING DISINFORMATION",
-  }
+  { 
+    key: "compliance", 
+    label: "Compliance to Rules and Restrictions", 
+    weight: "10%", 
+    max: 10, 
+    desc: "Determines the extent to which the project follows all competition guidelines, technical constraints, and ethical standards." 
+  },
+];
+
+export const FINALS_CRITERIA = [
+  { 
+    key: "problemFit", 
+    label: "Problem & Solution Fit", 
+    weight: "30%", 
+    max: 30, 
+    desc: "Evaluates how well the team defines and understands the problem, including its relevance and target users, and how effectively their proposed solution addresses the identified needs in a clear and logical manner." 
+  },
+  { 
+    key: "techExecution", 
+    label: "Product & Technical Execution", 
+    weight: "25%", 
+    max: 25, 
+    desc: "Assesses the overall quality of the product, including its functionality and usability, as well as the appropriateness and soundness of the technologies and methods used in its development." 
+  },
+  { 
+    key: "innovationImpact", 
+    label: "Innovation & Impact", 
+    weight: "25%", 
+    max: 25, 
+    desc: "Measures the originality and creativity of the idea, along with its potential to generate meaningful real-world impact, including its feasibility, scalability, and value to its intended users or community." 
+  },
+  { 
+    key: "presentation", 
+    label: "Presentation & Delivery", 
+    weight: "20%", 
+    max: 20, 
+    desc: "Judges the team’s ability to clearly and effectively communicate their idea within the given time, including the organization of the pitch, quality of visuals, confidence in delivery, and responsiveness during the Q&A session." 
+  },
 ];
