@@ -54,7 +54,7 @@ export default function AdminPage() {
 
   const [processingStatus, setProcessingStatus] = useState<"IDLE" | "CALCULATING" | "READY">("IDLE");
   const [rankedResults, setRankedResults] = useState<any[]>([]);
-  const [publishingType, setPublishingType] = useState<"TOP10" | "TOP3">("TOP10");
+  const [publishingType, setPublishingType] = useState<"TOP12" | "TOP3">("TOP12");
 
   const [newEntry, setNewEntry] = useState({
     projectName: "",
@@ -265,7 +265,7 @@ export default function AdminPage() {
     toast({ title: "Winner Record Deleted" });
   };
 
-  const handleProcessLeaderboard = async (type: "TOP10" | "TOP3") => {
+  const handleProcessLeaderboard = async (type: "TOP12" | "TOP3") => {
     if (!entries || entries.length === 0) return;
     
     setPublishingType(type);
@@ -313,8 +313,8 @@ export default function AdminPage() {
     try {
       const batch = writeBatch(db);
       
-      if (publishingType === "TOP10") {
-        rankedResults.slice(0, 10).forEach((res, index) => {
+      if (publishingType === "TOP12") {
+        rankedResults.slice(0, 12).forEach((res, index) => {
           const ref = doc(db, "entries", res.id);
           batch.update(ref, { 
             finalRank: index + 1,
@@ -322,7 +322,7 @@ export default function AdminPage() {
           });
         });
         
-        rankedResults.slice(10).forEach((res) => {
+        rankedResults.slice(12).forEach((res) => {
           const ref = doc(db, "entries", res.id);
           batch.update(ref, { 
             finalRank: null,
@@ -343,7 +343,7 @@ export default function AdminPage() {
       await batch.commit();
       setIsProcessing(false);
       setProcessingStatus("IDLE");
-      toast({ title: publishingType === "TOP10" ? "Finalists Published" : "Winners Published" });
+      toast({ title: publishingType === "TOP12" ? "Finalists Published" : "Winners Published" });
     } catch (error) {
       toast({ variant: "destructive", title: "Publication Failed" });
     }
@@ -729,9 +729,9 @@ export default function AdminPage() {
               <div className="py-6">
                 {processingStatus === "IDLE" && (
                   <div className="grid grid-cols-2 gap-4 text-center py-12">
-                    <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-accent/50 cursor-pointer transition-all" onClick={() => handleProcessLeaderboard("TOP10")}>
+                    <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-accent/50 cursor-pointer transition-all" onClick={() => handleProcessLeaderboard("TOP12")}>
                       <Presentation className="w-12 h-12 text-accent/50 mx-auto mb-4" />
-                      <h3 className="font-bold text-white mb-2">Publish Top 10</h3>
+                      <h3 className="font-bold text-white mb-2">Publish Top 12</h3>
                       <p className="text-[10px] text-muted-foreground uppercase">Initial Mission Phase</p>
                     </div>
                     <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-yellow-500/50 cursor-pointer transition-all" onClick={() => handleProcessLeaderboard("TOP3")}>
@@ -761,7 +761,7 @@ export default function AdminPage() {
                           </TableHeader>
                           <TableBody>
                             {rankedResults.map((res, i) => {
-                              const publishCount = publishingType === "TOP10" ? 10 : 3;
+                              const publishCount = publishingType === "TOP12" ? 12 : 3;
                               const isWillBePublished = i < publishCount;
                               
                               return (
@@ -780,8 +780,8 @@ export default function AdminPage() {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     {isWillBePublished ? (
-                                      <Badge className={cn("text-[9px] uppercase", publishingType === "TOP10" ? "bg-accent" : "bg-yellow-500")}>
-                                        {publishingType === "TOP10" ? "Promote" : "Winner"}
+                                      <Badge className={cn("text-[9px] uppercase", publishingType === "TOP12" ? "bg-accent" : "bg-yellow-500")}>
+                                        {publishingType === "TOP12" ? "Promote" : "Winner"}
                                       </Badge>
                                     ) : (
                                       <span className="text-[10px] text-muted-foreground uppercase font-medium">Stationary</span>
@@ -797,8 +797,8 @@ export default function AdminPage() {
                     <div className="flex gap-4">
                       <Button variant="ghost" onClick={() => setProcessingStatus("IDLE")} className="uppercase text-xs font-bold">Back</Button>
                       <Button onClick={handleApplyRanks} className="flex-1 bg-accent hover:bg-accent/80 uppercase font-bold text-sm h-12">
-                        {publishingType === "TOP10" ? (
-                          <><Star className="w-4 h-4 mr-2" /> Publish Top 10 Finalists</>
+                        {publishingType === "TOP12" ? (
+                          <><Star className="w-4 h-4 mr-2" /> Publish Top 12 Finalists</>
                         ) : (
                           <><Trophy className="w-4 h-4 mr-2" /> Publish Top 3 Winners</>
                         )}
@@ -1006,4 +1006,8 @@ export default function AdminPage() {
       </Dialog>
     </div>
   );
+}
+
+function userHook() {
+  return useUser();
 }

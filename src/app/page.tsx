@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Filter, Loader2, Trophy, Rocket, Star, Code } from "lucide-react";
 import Image from "next/image";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -223,6 +225,3 @@ export default function Home() {
     </div>
   );
 }
-
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
