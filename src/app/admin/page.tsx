@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2, School } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2, School, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseConfig } from "@/firebase/config";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 export default function AdminPage() {
   const { user, isUserLoading } = useUser();
@@ -243,9 +244,8 @@ export default function AdminPage() {
     
     try {
       const results = [];
-      const entriesToProcess = type === "TOP3" ? entries.filter(e => e.finalRank && e.finalRank <= 10) : entries;
       
-      for (const entry of entriesToProcess) {
+      for (const entry of entries) {
         const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
         const snapshot = await getDocs(scoresRef);
         
@@ -256,6 +256,7 @@ export default function AdminPage() {
           const data = doc.data();
           if (data.scores) {
             const { mastery = 0, innovation = 0, impact = 0, compliance = 0 } = data.scores;
+            // Mastery(30%), Innovation(30%), Impact(30%), Compliance(10%) are already scores out of 30, 30, 30, 10
             const weightedSum = mastery + innovation + impact + compliance;
             totalWeightedScore += weightedSum;
             submissionCount++;
@@ -266,7 +267,8 @@ export default function AdminPage() {
           id: entry.id,
           teamName: entry.teamName,
           avgScore: submissionCount > 0 ? (totalWeightedScore / submissionCount).toFixed(2) : "0.00",
-          submissionCount
+          submissionCount,
+          isFinalist: !!entry.top10Published
         });
       }
       
@@ -678,7 +680,7 @@ export default function AdminPage() {
                 <Zap className="w-4 h-4 mr-2" /> Leaderboard
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl bg-card border-border">
+            <DialogContent className="max-w-4xl bg-card border-border">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold uppercase italic">Calculate Standings</DialogTitle>
               </DialogHeader>
@@ -704,29 +706,62 @@ export default function AdminPage() {
                 )}
                 {processingStatus === "READY" && (
                   <div className="space-y-6">
-                    <div className="glass-card rounded-lg overflow-hidden border-white/10 max-h-80 overflow-y-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Rank</TableHead>
-                            <TableHead>Team</TableHead>
-                            <TableHead>Avg Weighted</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {rankedResults.slice(0, publishingType === "TOP10" ? 10 : 3).map((res, i) => (
-                            <TableRow key={res.id}>
-                              <TableCell className="font-bold text-accent">#{i+1}</TableCell>
-                              <TableCell>{res.teamName}</TableCell>
-                              <TableCell>{res.avgScore}</TableCell>
+                    <div className="glass-card rounded-lg overflow-hidden border-white/10">
+                      <ScrollArea className="h-96">
+                        <Table>
+                          <TableHeader className="bg-white/5 sticky top-0 z-10">
+                            <TableRow>
+                              <TableHead className="w-20">Rank</TableHead>
+                              <TableHead>Team</TableHead>
+                              <TableHead className="text-right">Avg Score</TableHead>
+                              <TableHead className="text-right">Status</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {rankedResults.map((res, i) => {
+                              const publishCount = publishingType === "TOP10" ? 10 : 3;
+                              const isWillBePublished = i < publishCount;
+                              
+                              return (
+                                <TableRow key={res.id} className={cn(isWillBePublished && "bg-accent/5")}>
+                                  <TableCell className={cn("font-bold", isWillBePublished ? "text-accent" : "text-muted-foreground")}>
+                                    #{i + 1}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{res.teamName}</span>
+                                      <span className="text-[9px] text-muted-foreground uppercase">{res.submissionCount} Evaluations</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono font-bold">
+                                    {res.avgScore}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {isWillBePublished ? (
+                                      <Badge className={cn("text-[9px] uppercase", publishingType === "TOP10" ? "bg-accent" : "bg-yellow-500")}>
+                                        {publishingType === "TOP10" ? "Promote" : "Winner"}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-[10px] text-muted-foreground uppercase font-medium">Stationary</span>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
                     </div>
-                    <Button onClick={handleApplyRanks} className="w-full bg-accent uppercase font-bold">
-                      Publish {publishingType === "TOP10" ? "Stellar Finalists" : "Global Winners"}
-                    </Button>
+                    <div className="flex gap-4">
+                      <Button variant="ghost" onClick={() => setProcessingStatus("IDLE")} className="uppercase text-xs font-bold">Back</Button>
+                      <Button onClick={handleApplyRanks} className="flex-1 bg-accent hover:bg-accent/80 uppercase font-bold text-sm h-12">
+                        {publishingType === "TOP10" ? (
+                          <><Star className="w-4 h-4 mr-2" /> Publish Top 10 Finalists</>
+                        ) : (
+                          <><Trophy className="w-4 h-4 mr-2" /> Publish Top 3 Winners</>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
