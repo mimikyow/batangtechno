@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2, Star } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Code, Medal, Edit2, Users, CheckCircle2, Star, RefreshCw, Power } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useAuth } from "@/firebase";
-import { doc, collection, getDocs, setDoc, writeBatch } from "firebase/firestore";
+import { doc, collection, getDocs, setDoc, writeBatch, deleteDoc } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
@@ -23,7 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export default function AdminPage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading } = userHook();
   const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
@@ -47,6 +47,7 @@ export default function AdminPage() {
   const [isAddingProgWinner, setIsAddingProgWinner] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
   const [viewingEntry, setViewingEntry] = useState<any>(null);
   const [entryScores, setEntryScores] = useState<any[]>([]);
   const [isLoadingScores, setIsLoadingScores] = useState(false);
@@ -120,6 +121,44 @@ export default function AdminPage() {
     }
   };
 
+  const handlePurgeAllScores = async () => {
+    if (!confirm("CRITICAL ACTION: This will delete ALL evaluation scores across ALL entries. This cannot be undone. Proceed?")) return;
+    
+    setIsPurging(true);
+    try {
+      const batchSize = 500;
+      for (const entry of (entries || [])) {
+        const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
+        const snapshot = await getDocs(scoresRef);
+        
+        const batch = writeBatch(db);
+        snapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+
+        // Also reset judge progress
+        for (const judge of (judges || [])) {
+          updateDocumentNonBlocking(doc(db, "roles_judge", judge.id), {
+            judgedEntries: []
+          });
+        }
+      }
+      toast({ title: "Mission Reset Complete", description: "All preliminary evaluations purged." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Purge Failed" });
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
+  const handleToggleJudgeStatus = (judgeId: string, currentStatus: boolean) => {
+    updateDocumentNonBlocking(doc(db, "roles_judge", judgeId), {
+      isActive: !currentStatus
+    });
+    toast({ title: currentStatus ? "Judge Deactivated" : "Judge Activated" });
+  };
+
   if (isUserLoading) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
@@ -182,6 +221,7 @@ export default function AdminPage() {
         username: newJudge.username,
         name: newJudge.name,
         role: "judge",
+        isActive: true,
         judgedEntries: []
       });
 
@@ -393,6 +433,10 @@ export default function AdminPage() {
 
   const totalEntries = entries?.length || 0;
 
+  function userHook() {
+    return useUser();
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
@@ -414,6 +458,16 @@ export default function AdminPage() {
         </div>
         
         <div className="flex flex-wrap gap-4">
+          <Button 
+            variant="outline" 
+            onClick={handlePurgeAllScores}
+            disabled={isPurging}
+            className="border-destructive text-destructive hover:bg-destructive/10 uppercase text-xs font-bold tracking-widest"
+          >
+            {isPurging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Reset Evaluations
+          </Button>
+
           <Dialog open={isAddingProgWinner} onOpenChange={setIsAddingProgWinner}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 hover:text-white uppercase text-xs font-bold tracking-widest">
@@ -853,19 +907,33 @@ export default function AdminPage() {
             const completedCount = judge.judgedEntries?.length || 0;
             const progress = totalEntries > 0 ? (completedCount / totalEntries) * 100 : 0;
             const isFinished = completedCount >= totalEntries && totalEntries > 0;
+            const isActive = judge.isActive !== false;
 
             return (
-              <div key={judge.id} className="p-4 bg-white/5 rounded-lg border border-white/10 space-y-4">
+              <div key={judge.id} className={cn(
+                "p-4 rounded-lg border transition-all space-y-4",
+                isActive ? "bg-white/5 border-white/10" : "bg-destructive/5 border-destructive/20 opacity-70"
+              )}>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="font-bold text-white text-sm">{judge.name}</span>
                     <span className="text-[10px] text-muted-foreground uppercase">@{judge.username}</span>
                   </div>
-                  {isFinished ? (
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                  ) : (
-                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn("h-8 w-8", isActive ? "text-accent" : "text-destructive")}
+                      onClick={() => handleToggleJudgeStatus(judge.id, isActive)}
+                    >
+                      <Power className="w-4 h-4" />
+                    </Button>
+                    {isFinished ? (
+                      <CheckCircle2 className="w-4 h-4 text-accent" />
+                    ) : (
+                      <div className={cn("w-2 h-2 rounded-full animate-pulse", isActive ? "bg-accent" : "bg-destructive")} />
+                    )}
+                  </div>
                 </div>
                 
                 <div className="space-y-1.5">

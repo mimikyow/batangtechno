@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, Edit3 } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, Edit3, PowerOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, arrayUnion, getDoc } from "firebase/firestore";
@@ -131,6 +131,22 @@ export default function JudgePage() {
         <p className="text-muted-foreground max-w-md mb-8">Unauthorized for Judge Panel.</p>
         <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20 hover:text-white">
           Go to Login
+        </Button>
+      </div>
+    );
+  }
+
+  // Handle Deactivated Judge
+  if (judgeRole.isActive === false) {
+    return (
+      <div className="h-[80vh] flex flex-col items-center justify-center text-center px-4">
+        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
+          <PowerOff className="w-10 h-10 text-destructive" />
+        </div>
+        <h1 className="text-4xl font-bold text-white mb-2 uppercase italic tracking-tighter">Session Suspended</h1>
+        <p className="text-muted-foreground max-w-md mb-8">Your access has been temporarily deactivated by the Mission Command. Please contact system administrators.</p>
+        <Button onClick={() => router.push("/")} variant="outline" className="border-white/20 hover:text-white">
+          Return to Public Board
         </Button>
       </div>
     );
