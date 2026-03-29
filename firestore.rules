@@ -65,5 +65,10 @@ service cloud.firestore {
     match /judgeAssignments/{assignmentId} {
       allow get, list, create, update, delete: if isAdmin();
     }
+
+    match /settings/{settingId} {
+      allow get: if isSignedIn();
+      allow list, create, update, delete: if isAdmin();
+    }
   }
 }
