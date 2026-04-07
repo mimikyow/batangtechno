@@ -174,7 +174,8 @@ export default function AdminPage() {
         innovationImpact: { team: "TBD", score: 0 },
         presentation: { team: "TBD", score: 0 },
         uiux: { team: "TBD", score: 0 },
-        sustainability: { team: "TBD", score: 0 }
+        sustainability: { team: "TBD", score: 0 },
+        projectManagement: { team: "Not Selected", score: 0 }
       };
       
       for (const entry of entries) {
@@ -210,11 +211,21 @@ export default function AdminPage() {
 
         if (entry.top10Published && submissionCount > 0) {
           Object.keys(awardsCalc).forEach(key => {
+            if (key === 'projectManagement') return;
             const avgCrit = criteriaSums[key] / submissionCount;
             if (avgCrit > awardsCalc[key].score) {
               awardsCalc[key] = { team: entry.teamName, score: avgCrit, id: entry.id };
             }
           });
+        }
+      }
+
+      // Handle Ask Lex PH Academy Award Nomination
+      const specialJudge = judges?.find(j => j.email?.toLowerCase() === "fcveroya@asklexph.com");
+      if (specialJudge?.projectManagementNomination) {
+        const nominatedEntry = entries.find(e => e.id === specialJudge.projectManagementNomination);
+        if (nominatedEntry) {
+          awardsCalc.projectManagement = { team: nominatedEntry.teamName, score: 100, id: nominatedEntry.id };
         }
       }
       
@@ -259,8 +270,7 @@ export default function AdminPage() {
           });
         });
 
-        // Publish Special Awards
-        // First reset all award flags on all entries
+        // Reset all award flags on all entries
         entries?.forEach(e => {
           const ref = doc(db, "entries", e.id);
           batch.update(ref, {
@@ -269,7 +279,8 @@ export default function AdminPage() {
             awardInnovationImpact: false,
             awardPresentation: false,
             awardUiux: false,
-            awardSustainability: false
+            awardSustainability: false,
+            awardProjectManagement: false
           });
         });
 
@@ -284,7 +295,8 @@ export default function AdminPage() {
               innovationImpact: "awardInnovationImpact",
               presentation: "awardPresentation",
               uiux: "awardUiux",
-              sustainability: "awardSustainability"
+              sustainability: "awardSustainability",
+              projectManagement: "awardProjectManagement"
             };
             const field = fieldMap[key];
             if (field) {
@@ -292,6 +304,13 @@ export default function AdminPage() {
             }
           }
         });
+
+        // Ensure People's Choice is published too
+        const peoplesChoiceWinner = entries?.find(e => e.isPeoplesChoice);
+        if (peoplesChoiceWinner) {
+          const ref = doc(db, "entries", peoplesChoiceWinner.id);
+          batch.update(ref, { isPeoplesChoice: true });
+        }
       }
 
       await batch.commit();
@@ -531,7 +550,7 @@ export default function AdminPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest"><Zap className="w-4 h-4 mr-2" /> Leaderboard</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl bg-card border-border">
+            <DialogContent className="max-w-5xl bg-card border-border">
               <DialogHeader><DialogTitle className="uppercase italic">Mission Standings</DialogTitle></DialogHeader>
               <div className="py-6">
                 {processingStatus === "IDLE" && (
@@ -574,7 +593,11 @@ export default function AdminPage() {
                           <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Sustainability</p>
                           <p className="text-[10px] text-white font-black truncate">{specialAwards.sustainability?.team}</p>
                        </div>
-                       <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg text-center col-span-2">
+                       <div className="p-4 bg-yellow-500/10 border border-yellow-500/40 rounded-lg text-center lg:col-span-2">
+                          <p className="text-[9px] uppercase text-yellow-500 font-black mb-1">Ask Lex PH Academy Award</p>
+                          <p className="text-[10px] text-white font-black truncate">{specialAwards.projectManagement?.team}</p>
+                       </div>
+                       <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg text-center lg:col-span-4">
                           <p className="text-[9px] uppercase text-red-500 font-bold mb-1">People's Choice</p>
                           <p className="text-[10px] text-white font-black truncate">{peoplesChoiceWinner?.teamName || "Not Selected"}</p>
                        </div>

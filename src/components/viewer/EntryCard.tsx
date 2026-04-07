@@ -36,6 +36,7 @@ interface EntryCardProps {
     awardPresentation?: boolean;
     awardUiux?: boolean;
     awardSustainability?: boolean;
+    awardProjectManagement?: boolean;
   };
 }
 
@@ -139,6 +140,7 @@ export function EntryCard({ entry }: EntryCardProps) {
 
         {/* Award Badges Row */}
         <div className="flex flex-wrap gap-1 mb-4">
+           {entry.awardProjectManagement && <Badge variant="outline" className="text-[7px] border-yellow-500 text-yellow-500 uppercase font-bold py-0 h-4">Ask Lex PH Award</Badge>}
            {entry.awardProblemFit && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Problem Solver</Badge>}
            {entry.awardTechExecution && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Tech Mastery</Badge>}
            {entry.awardInnovationImpact && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Impact</Badge>}

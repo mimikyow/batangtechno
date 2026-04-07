@@ -39,6 +39,7 @@ export interface HackathonEntry {
   awardPresentation?: boolean;
   awardUiux?: boolean;
   awardSustainability?: boolean;
+  awardProjectManagement?: boolean;
 }
 
 export interface ProgrammingWinner {

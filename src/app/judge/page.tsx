@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, PowerOff, Sparkles } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, PowerOff, Sparkles, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, arrayUnion, getDoc } from "firebase/firestore";
@@ -24,6 +24,9 @@ export default function JudgePage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  const SPECIAL_JUDGE_EMAIL = "fcveroya@asklexph.com";
+  const isSpecialJudge = user?.email?.toLowerCase() === SPECIAL_JUDGE_EMAIL;
 
   const judgeDocRef = useMemoFirebase(() => user ? doc(db, "roles_judge", user.uid) : null, [db, user]);
   const { data: judgeRole, isLoading: isJudgeChecking } = useDoc(judgeDocRef);
@@ -51,11 +54,19 @@ export default function JudgePage() {
     comment: ""
   });
 
+  const [nomination, setNomination] = useState<string>("");
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login");
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    if (judgeRole?.projectManagementNomination) {
+      setNomination(judgeRole.projectManagementNomination);
+    }
+  }, [judgeRole]);
 
   useEffect(() => {
     async function loadExistingScores() {
@@ -192,6 +203,15 @@ export default function JudgePage() {
     setSelectedEntry(null);
   };
 
+  const handleNominate = (entryId: string) => {
+    if (!judgeDocRef) return;
+    setNomination(entryId);
+    updateDocumentNonBlocking(judgeDocRef, {
+      projectManagementNomination: entryId
+    });
+    toast({ title: "Nomination Logged", description: "Ask Lex PH Academy Award winner updated." });
+  };
+
   const isJudged = (entryId: string) => {
     return judgeRole?.judgedEntries?.includes(entryId);
   };
@@ -216,10 +236,42 @@ export default function JudgePage() {
       return aJudged ? 1 : -1;
     });
 
+  const finalists = (entries || []).filter(e => e.top10Published).sort((a, b) => (a.finalRank || 0) - (b.finalRank || 0));
+
   const selectedEmbedUrl = selectedEntry ? getGoogleDriveEmbedUrl(selectedEntry.googleDriveVideoLink) : "";
 
   return (
     <div className="container mx-auto px-4 py-12">
+      {isSpecialJudge && isFinalsPhase && (
+        <div className="mb-12 glass-card p-6 rounded-2xl border-yellow-500/30 bg-yellow-500/5 animate-in fade-in slide-in-from-top-4 duration-700">
+           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-yellow-500/20 p-3 rounded-xl border border-yellow-500/40">
+                  <Award className="w-8 h-8 text-yellow-500" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white uppercase italic tracking-tighter glow-accent">Ask Lex PH Academy Award</h2>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Excellence in Project Management</p>
+                </div>
+              </div>
+              
+              <div className="flex-1 max-w-sm">
+                <label className="text-[9px] uppercase text-yellow-500 font-bold mb-2 block tracking-[0.2em]">Select Mission Champion</label>
+                <Select value={nomination} onValueChange={handleNominate}>
+                  <SelectTrigger className="bg-black/40 border-yellow-500/20 h-10 text-[10px] uppercase font-bold text-white">
+                    <SelectValue placeholder="Choose a Finalist" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {finalists.map(f => (
+                      <SelectItem key={f.id} value={f.id}>{f.teamName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+           </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-80 flex flex-col gap-4">
           <div className="flex items-center justify-between mb-2">

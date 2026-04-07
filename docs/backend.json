@@ -36,6 +36,10 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Array of entry IDs the judge has evaluated."
+        },
+        "projectManagementNomination": {
+          "type": "string",
+          "description": "The entry ID nominated for the Ask Lex PH Academy Award (exclusive to specific judge)."
         }
       },
       "required": [
@@ -165,12 +169,20 @@
         },
         "top10Published": {
           "type": "boolean",
-          "description": "Indicates if the entry is part of the published Top 10 finalists."
+          "description": "Indicates if the entry is part of the published Top 12 finalists."
         },
         "top3Published": {
           "type": "boolean",
           "description": "Indicates if the entry is part of the published Top 3 winners."
-        }
+        },
+        "isPeoplesChoice": { "type": "boolean" },
+        "awardProblemFit": { "type": "boolean" },
+        "awardTechExecution": { "type": "boolean" },
+        "awardInnovationImpact": { "type": "boolean" },
+        "awardPresentation": { "type": "boolean" },
+        "awardUiux": { "type": "boolean" },
+        "awardSustainability": { "type": "boolean" },
+        "awardProjectManagement": { "type": "boolean" }
       },
       "required": [
         "id",

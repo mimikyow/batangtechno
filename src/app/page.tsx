@@ -43,7 +43,7 @@ export default function Home() {
   
   const specialAwardWinners = (entries || []).filter(e => 
     e.awardProblemFit || e.awardTechExecution || e.awardInnovationImpact || 
-    e.awardPresentation || e.awardUiux || e.awardSustainability || e.isPeoplesChoice
+    e.awardPresentation || e.awardUiux || e.awardSustainability || e.isPeoplesChoice || e.awardProjectManagement
   );
 
   return (
@@ -196,6 +196,7 @@ export default function Home() {
                         <div key={entry.id} className="glass-card p-6 rounded-xl border-accent/20 flex flex-col gap-4">
                           <div className="flex flex-wrap gap-2">
                             {entry.isPeoplesChoice && <Badge className="bg-red-500/20 text-red-500 border-red-500/30 text-[8px] uppercase font-black"><Heart className="w-2.5 h-2.5 mr-1 fill-red-500" /> People's Choice</Badge>}
+                            {entry.awardProjectManagement && <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Excellence in Project Management</Badge>}
                             {entry.awardProblemFit && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Best Problem Solver</Badge>}
                             {entry.awardTechExecution && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Tech Execution</Badge>}
                             {entry.awardInnovationImpact && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Innovation Impact</Badge>}
