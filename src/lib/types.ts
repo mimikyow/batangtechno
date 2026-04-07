@@ -32,6 +32,13 @@ export interface HackathonEntry {
   pitchDeckLink?: string;
   overallScore?: number;
   isPeoplesChoice?: boolean;
+  // Special Award Flags
+  awardProblemFit?: boolean;
+  awardTechExecution?: boolean;
+  awardInnovationImpact?: boolean;
+  awardPresentation?: boolean;
+  awardUiux?: boolean;
+  awardSustainability?: boolean;
 }
 
 export interface ProgrammingWinner {

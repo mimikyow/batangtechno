@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Edit2, Users, CheckCircle2, Star, RefreshCw, Power, Settings2, ShieldCheck, ChevronUp, ChevronDown, Award, Heart } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Edit2, Users, CheckCircle2, Star, RefreshCw, Power, Settings2, ShieldCheck, ChevronUp, ChevronDown, Award, Heart, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -168,7 +168,7 @@ export default function AdminPage() {
     
     try {
       const results = [];
-      const awardsCalc: Record<string, { team: string, score: number }> = {
+      const awardsCalc: Record<string, { team: string, score: number, id?: string }> = {
         problemFit: { team: "TBD", score: 0 },
         techExecution: { team: "TBD", score: 0 },
         innovationImpact: { team: "TBD", score: 0 },
@@ -188,12 +188,10 @@ export default function AdminPage() {
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.scores) {
-            // Main score sum (excluding special awards if you want them separate, but here we sum all active)
             const sum = Object.values(data.scores).reduce((a: any, b: any) => a + b, 0) as number;
             totalWeightedScore += sum;
             submissionCount++;
 
-            // Sum per criteria for special awards
             Object.keys(data.scores).forEach(k => {
               criteriaSums[k] = (criteriaSums[k] || 0) + data.scores[k];
             });
@@ -210,12 +208,11 @@ export default function AdminPage() {
           isFinalist: !!entry.top10Published
         });
 
-        // Track special award winners (only for finalists)
         if (entry.top10Published && submissionCount > 0) {
           Object.keys(awardsCalc).forEach(key => {
             const avgCrit = criteriaSums[key] / submissionCount;
             if (avgCrit > awardsCalc[key].score) {
-              awardsCalc[key] = { team: entry.teamName, score: avgCrit };
+              awardsCalc[key] = { team: entry.teamName, score: avgCrit, id: entry.id };
             }
           });
         }
@@ -253,6 +250,7 @@ export default function AdminPage() {
           });
         });
       } else {
+        // Publish Top 3
         rankedResults.slice(0, 3).forEach((res, index) => {
           const ref = doc(db, "entries", res.id);
           batch.update(ref, { 
@@ -260,12 +258,46 @@ export default function AdminPage() {
             top3Published: true
           });
         });
+
+        // Publish Special Awards
+        // First reset all award flags on all entries
+        entries?.forEach(e => {
+          const ref = doc(db, "entries", e.id);
+          batch.update(ref, {
+            awardProblemFit: false,
+            awardTechExecution: false,
+            awardInnovationImpact: false,
+            awardPresentation: false,
+            awardUiux: false,
+            awardSustainability: false
+          });
+        });
+
+        // Apply new special award winners
+        Object.keys(specialAwards).forEach(key => {
+          const winnerId = specialAwards[key].id;
+          if (winnerId) {
+            const ref = doc(db, "entries", winnerId);
+            const fieldMap: Record<string, string> = {
+              problemFit: "awardProblemFit",
+              techExecution: "awardTechExecution",
+              innovationImpact: "awardInnovationImpact",
+              presentation: "awardPresentation",
+              uiux: "awardUiux",
+              sustainability: "awardSustainability"
+            };
+            const field = fieldMap[key];
+            if (field) {
+              batch.update(ref, { [field]: true });
+            }
+          }
+        });
       }
 
       await batch.commit();
       setIsProcessing(false);
       setProcessingStatus("IDLE");
-      toast({ title: publishingType === "TOP12" ? "Finalists Published" : "Winners Published" });
+      toast({ title: publishingType === "TOP12" ? "Finalists Published" : "Winners & Special Awards Published" });
     } catch (error) {
       toast({ variant: "destructive", title: "Publication Failed" });
     }
@@ -517,7 +549,7 @@ export default function AdminPage() {
                 {processingStatus === "CALCULATING" && <div className="text-center py-12"><Loader2 className="w-12 h-12 text-accent animate-spin mx-auto" /></div>}
                 {processingStatus === "READY" && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                        <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
                           <p className="text-[9px] uppercase text-accent font-bold mb-1">Problem Solver</p>
                           <p className="text-[10px] text-white font-black truncate">{specialAwards.problemFit?.team}</p>
@@ -542,6 +574,10 @@ export default function AdminPage() {
                           <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Sustainability</p>
                           <p className="text-[10px] text-white font-black truncate">{specialAwards.sustainability?.team}</p>
                        </div>
+                       <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg text-center col-span-2">
+                          <p className="text-[9px] uppercase text-red-500 font-bold mb-1">People's Choice</p>
+                          <p className="text-[10px] text-white font-black truncate">{peoplesChoiceWinner?.teamName || "Not Selected"}</p>
+                       </div>
                     </div>
                     <ScrollArea className="h-72">
                       <Table>
@@ -559,7 +595,9 @@ export default function AdminPage() {
                     </ScrollArea>
                     <div className="flex gap-4">
                       <Button variant="ghost" onClick={() => setProcessingStatus("IDLE")} className="uppercase text-xs font-bold">Back</Button>
-                      <Button onClick={handleApplyRanks} className="flex-1 bg-accent uppercase font-bold text-xs">{publishingType === "TOP12" ? "Publish Top 12 Finalists" : "Publish Top 3 Winners"}</Button>
+                      <Button onClick={handleApplyRanks} className="flex-1 bg-accent uppercase font-bold text-xs">
+                        {publishingType === "TOP12" ? "Publish Top 12 Finalists" : "Publish Winners & Special Awards"}
+                      </Button>
                     </div>
                   </div>
                 )}

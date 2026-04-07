@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, Users, School, Globe, Presentation, FileText } from "lucide-react";
+import { PlayCircle, Users, School, Globe, Presentation, FileText, Heart, Award, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getGoogleDriveEmbedUrl, getGoogleDriveImageUrl } from "@/lib/utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
@@ -29,6 +29,13 @@ interface EntryCardProps {
     pitchDeckLink?: string;
     top10Published?: boolean;
     top3Published?: boolean;
+    isPeoplesChoice?: boolean;
+    awardProblemFit?: boolean;
+    awardTechExecution?: boolean;
+    awardInnovationImpact?: boolean;
+    awardPresentation?: boolean;
+    awardUiux?: boolean;
+    awardSustainability?: boolean;
   };
 }
 
@@ -60,7 +67,6 @@ export function EntryCard({ entry }: EntryCardProps) {
           data-ai-hint="project thumbnail"
         />
 
-        {/* Branding Logo - Centered and High Visibility */}
         {logo && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-transform duration-500 group-hover:scale-110">
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] opacity-90 group-hover:opacity-100 transition-opacity">
@@ -96,7 +102,7 @@ export function EntryCard({ entry }: EntryCardProps) {
           </Dialog>
         </div>
         
-        <div className="absolute top-2 right-2 z-20 flex gap-2">
+        <div className="absolute top-2 right-2 z-20 flex flex-col gap-1.5 items-end">
           {entry.top3Published && entry.finalRank && (
             <Badge className="bg-yellow-500 text-white border-none shadow-[0_0_10px_rgba(234,179,8,0.5)] text-[9px] uppercase font-bold">
               Winner #{entry.finalRank}
@@ -105,6 +111,11 @@ export function EntryCard({ entry }: EntryCardProps) {
           {entry.top10Published && !entry.top3Published && (
             <Badge className="bg-accent text-white border-none shadow-glow text-[9px] uppercase font-bold">
               Finalist
+            </Badge>
+          )}
+          {entry.isPeoplesChoice && (
+            <Badge className="bg-red-500 text-white border-none text-[8px] uppercase font-bold">
+              <Heart className="w-2.5 h-2.5 mr-1 fill-white" /> People's Choice
             </Badge>
           )}
         </div>
@@ -124,6 +135,16 @@ export function EntryCard({ entry }: EntryCardProps) {
             <Globe className="w-3 h-3 text-accent" />
             <span className="truncate">{entry.challengeId}</span>
           </div>
+        </div>
+
+        {/* Award Badges Row */}
+        <div className="flex flex-wrap gap-1 mb-4">
+           {entry.awardProblemFit && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Problem Solver</Badge>}
+           {entry.awardTechExecution && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Tech Mastery</Badge>}
+           {entry.awardInnovationImpact && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Impact</Badge>}
+           {entry.awardPresentation && <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase font-bold py-0 h-4">Best Pitch</Badge>}
+           {entry.awardUiux && <Badge variant="outline" className="text-[7px] border-yellow-500/30 text-yellow-500 uppercase font-bold py-0 h-4">Best UI/UX</Badge>}
+           {entry.awardSustainability && <Badge variant="outline" className="text-[7px] border-green-500/30 text-green-500 uppercase font-bold py-0 h-4">Sustainability</Badge>}
         </div>
 
         <p className="text-xs text-slate-300 line-clamp-3 mb-6 flex-1 leading-relaxed">
