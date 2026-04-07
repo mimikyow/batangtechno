@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, UserMinus, BarChart3, Presentation, Save, Edit2, Users, CheckCircle2, Star, RefreshCw, Power, Settings2, ShieldCheck, ChevronUp, ChevronDown, Award, Heart, Sparkles } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, BarChart3, Presentation, Save, Edit2, Users, Star, RefreshCw, Power, Settings2, ChevronUp, ChevronDown, Heart, Code, Rocket } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseConfig } from "@/firebase/config";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 export default function AdminPage() {
@@ -38,6 +39,9 @@ export default function AdminPage() {
 
   const judgesQuery = useMemoFirebase(() => collection(db, "roles_judge"), [db]);
   const { data: judges } = useCollection(judgesQuery);
+
+  const winnersQuery = useMemoFirebase(() => collection(db, "programming_winners"), [db]);
+  const { data: winners } = useCollection(winnersQuery);
 
   const configRef = useMemoFirebase(() => doc(db, "settings", "judging"), [db]);
   const { data: appConfig } = useDoc(configRef);
@@ -59,6 +63,9 @@ export default function AdminPage() {
   const [specialAwards, setSpecialAwards] = useState<any>({});
   const [publishingType, setPublishingType] = useState<"TOP12" | "TOP3">("TOP12");
 
+  const [isAddingWinner, setIsAddingWinner] = useState(false);
+  const [editingWinnerId, setEditingWinnerId] = useState<string | null>(null);
+
   const [newEntry, setNewEntry] = useState({
     projectName: "",
     teamName: "",
@@ -78,6 +85,15 @@ export default function AdminPage() {
     name: "",
     username: "",
     email: ""
+  });
+
+  const [newWinner, setNewWinner] = useState({
+    name: "",
+    school: "",
+    pictureUrl: "",
+    schoolLogoUrl: "",
+    place: 1 as 1 | 2 | 3,
+    category: "COLLEGE" as "HIGH_SCHOOL" | "COLLEGE"
   });
 
   const [editingPitchLink, setEditingPitchLink] = useState<{id: string, url: string} | null>(null);
@@ -179,7 +195,6 @@ export default function AdminPage() {
         projectManagement: { team: "Not Selected", score: 0 }
       };
       
-      // Filter entries if we are calculating Top 3 (only Finalists)
       const targetEntries = type === "TOP3" ? entries.filter(e => e.top10Published) : entries;
 
       for (const entry of targetEntries) {
@@ -195,7 +210,6 @@ export default function AdminPage() {
           const judgeId = data.judgeId || doc.id;
           const judge = (judges || []).find(j => j.id === judgeId);
 
-          // CRITICAL: Filter by judge status AND evaluation phase if we are in Top 3 mode
           const isPhaseValid = type === "TOP3" ? data.phase === "FINALS" : true;
 
           if (judge && judge.isActive !== false && isPhaseValid && data.scores) {
@@ -219,7 +233,6 @@ export default function AdminPage() {
           isFinalist: !!entry.top10Published
         });
 
-        // Special awards are only for finalists in the Top 3 context
         if (entry.top10Published && submissionCount > 0) {
           Object.keys(awardsCalc).forEach(key => {
             if (key === 'projectManagement') return;
@@ -231,7 +244,6 @@ export default function AdminPage() {
         }
       }
 
-      // Handle Ask Lex PH Academy Award Nomination
       const specialJudge = judges?.find(j => j.email?.toLowerCase() === "fcveroya@asklexph.com");
       if (specialJudge && specialJudge.isActive !== false && specialJudge.projectManagementNomination) {
         const nominatedEntry = entries.find(e => e.id === specialJudge.projectManagementNomination);
@@ -272,7 +284,6 @@ export default function AdminPage() {
           });
         });
       } else {
-        // Publish Top 3
         rankedResults.slice(0, 3).forEach((res, index) => {
           const ref = doc(db, "entries", res.id);
           batch.update(ref, { 
@@ -281,7 +292,6 @@ export default function AdminPage() {
           });
         });
 
-        // Reset all award flags on all entries
         entries?.forEach(e => {
           const ref = doc(db, "entries", e.id);
           batch.update(ref, {
@@ -295,7 +305,6 @@ export default function AdminPage() {
           });
         });
 
-        // Apply new special award winners
         Object.keys(specialAwards).forEach(key => {
           const winnerId = specialAwards[key].id;
           if (winnerId) {
@@ -333,14 +342,12 @@ export default function AdminPage() {
   };
 
   const handleSetPeoplesChoice = (entryId: string) => {
-    // First, clear isPeoplesChoice from all entries
     entries?.forEach(e => {
       if (e.isPeoplesChoice) {
         updateDocumentNonBlocking(doc(db, "entries", e.id), { isPeoplesChoice: false });
       }
     });
 
-    // If a valid entryId was selected (not the "NONE" option), set it
     if (entryId && entryId !== "NONE") {
       updateDocumentNonBlocking(doc(db, "entries", entryId), { isPeoplesChoice: true });
       toast({ title: "People's Choice Updated" });
@@ -447,6 +454,43 @@ export default function AdminPage() {
     toast({ title: "Entry Deleted" });
   };
 
+  const handleSaveWinner = () => {
+    if (!newWinner.name || !newWinner.school) {
+      toast({ variant: "destructive", title: "Validation Error" });
+      return;
+    }
+
+    if (editingWinnerId) {
+      updateDocumentNonBlocking(doc(db, "programming_winners", editingWinnerId), { ...newWinner });
+      toast({ title: "Winner Updated" });
+    } else {
+      addDocumentNonBlocking(collection(db, "programming_winners"), { ...newWinner });
+      toast({ title: "Winner Registered" });
+    }
+
+    setIsAddingWinner(false);
+    setEditingWinnerId(null);
+    setNewWinner({ name: "", school: "", pictureUrl: "", schoolLogoUrl: "", place: 1, category: "COLLEGE" });
+  };
+
+  const handleEditWinner = (winner: any) => {
+    setEditingWinnerId(winner.id);
+    setNewWinner({
+      name: winner.name,
+      school: winner.school,
+      pictureUrl: winner.pictureUrl,
+      schoolLogoUrl: winner.schoolLogoUrl,
+      place: winner.place,
+      category: winner.category
+    });
+    setIsAddingWinner(true);
+  };
+
+  const handleDeleteWinner = (id: string) => {
+    deleteDocumentNonBlocking(doc(db, "programming_winners", id));
+    toast({ title: "Winner Deleted" });
+  };
+
   const handleSavePitchLink = (entryId: string) => {
     if (!editingPitchLink) return;
     updateDocumentNonBlocking(doc(db, "entries", entryId), {
@@ -468,7 +512,7 @@ export default function AdminPage() {
       
       updateDocumentNonBlocking(doc(db, "entries", entryA.id), { finalRank: rankB });
       updateDocumentNonBlocking(doc(db, "entries", entryB.id), { finalRank: rankA });
-      toast({ title: "Sequence Updated", description: `${entryA.teamName} moved up.` });
+      toast({ title: "Sequence Updated" });
     } else if (direction === 'DOWN' && currentIndex < filteredEntries.length - 1) {
       const entryA = filteredEntries[currentIndex];
       const entryB = filteredEntries[currentIndex + 1];
@@ -477,7 +521,7 @@ export default function AdminPage() {
       
       updateDocumentNonBlocking(doc(db, "entries", entryA.id), { finalRank: rankB });
       updateDocumentNonBlocking(doc(db, "entries", entryB.id), { finalRank: rankA });
-      toast({ title: "Sequence Updated", description: `${entryA.teamName} moved down.` });
+      toast({ title: "Sequence Updated" });
     }
   };
 
@@ -560,221 +604,301 @@ export default function AdminPage() {
               <DialogFooter><Button className="bg-accent uppercase text-xs font-bold" onClick={handleCreateJudge}>Confirm Enrollment</Button></DialogFooter>
             </DialogContent>
           </Dialog>
-
-          <Dialog open={isProcessing} onOpenChange={setIsProcessing}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest"><Zap className="w-4 h-4 mr-2" /> Leaderboard</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-5xl bg-card border-border">
-              <DialogHeader><DialogTitle className="uppercase italic">Mission Standings</DialogTitle></DialogHeader>
-              <div className="py-6">
-                {processingStatus === "IDLE" && (
-                  <div className="grid grid-cols-2 gap-4 text-center py-12">
-                    <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-accent cursor-pointer" onClick={() => handleProcessLeaderboard("TOP12")}>
-                      <Trophy className="w-12 h-12 text-accent/50 mx-auto mb-4" />
-                      <h3 className="font-bold text-white uppercase text-xs">Publish Top 12</h3>
-                    </div>
-                    <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-yellow-500 cursor-pointer" onClick={() => handleProcessLeaderboard("TOP3")}>
-                      <Star className="w-12 h-12 text-yellow-500/50 mx-auto mb-4" />
-                      <h3 className="font-bold text-white uppercase text-xs">Publish Top 3</h3>
-                    </div>
-                  </div>
-                )}
-                {processingStatus === "CALCULATING" && <div className="text-center py-12"><Loader2 className="w-12 h-12 text-accent animate-spin mx-auto" /></div>}
-                {processingStatus === "READY" && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-                       <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
-                          <p className="text-[9px] uppercase text-accent font-bold mb-1">Problem Solver</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.problemFit?.team}</p>
-                       </div>
-                       <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
-                          <p className="text-[9px] uppercase text-accent font-bold mb-1">Tech Execution</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.techExecution?.team}</p>
-                       </div>
-                       <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
-                          <p className="text-[9px] uppercase text-accent font-bold mb-1">Impactful Innovation</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.innovationImpact?.team}</p>
-                       </div>
-                       <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
-                          <p className="text-[9px] uppercase text-accent font-bold mb-1">Best Pitch</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.presentation?.team}</p>
-                       </div>
-                       <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg text-center">
-                          <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Best UI/UX</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.uiux?.team}</p>
-                       </div>
-                       <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg text-center">
-                          <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Sustainability</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.sustainability?.team}</p>
-                       </div>
-                       <div className="p-4 bg-yellow-500/10 border border-yellow-500/40 rounded-lg text-center lg:col-span-2">
-                          <p className="text-[9px] uppercase text-yellow-500 font-black mb-1">Ask Lex PH Academy Award</p>
-                          <p className="text-[10px] text-white font-black truncate">{specialAwards.projectManagement?.team}</p>
-                       </div>
-                       <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg text-center lg:col-span-4">
-                          <p className="text-[9px] uppercase text-red-500 font-bold mb-1">People's Choice</p>
-                          <p className="text-[10px] text-white font-black truncate">{peoplesChoiceWinner?.teamName || "Not Selected"}</p>
-                       </div>
-                    </div>
-                    <ScrollArea className="h-72">
-                      <Table>
-                        <TableHeader className="bg-white/5 sticky top-0"><TableRow><TableHead>Rank</TableHead><TableHead>Team</TableHead><TableHead className="text-right">Avg Score</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                          {rankedResults.map((res, i) => (
-                            <TableRow key={res.id} className={cn(i < (publishingType === "TOP12" ? 12 : 3) && "bg-accent/5")}>
-                              <TableCell className="font-bold">#{i + 1}</TableCell>
-                              <TableCell className="font-medium text-xs">{res.teamName}</TableCell>
-                              <TableCell className="text-right font-mono text-xs">{res.avgScore}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </ScrollArea>
-                    <div className="flex gap-4">
-                      <Button variant="ghost" onClick={() => setProcessingStatus("IDLE")} className="uppercase text-xs font-bold">Back</Button>
-                      <Button onClick={handleApplyRanks} className="flex-1 bg-accent uppercase font-bold text-xs">
-                        {publishingType === "TOP12" ? "Publish Top 12 Finalists" : "Publish Winners & Special Awards"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isAdding} onOpenChange={setIsAdding}>
-            <DialogTrigger asChild>
-              <Button className="bg-accent hover:bg-accent/80 text-white uppercase text-xs font-bold tracking-widest"><Plus className="w-4 h-4 mr-2" /> New Entry</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-card border-border">
-              <DialogHeader><DialogTitle className="uppercase italic">Deploy Mission Entry</DialogTitle></DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Project Name</label><Input value={newEntry.projectName} onChange={e => setNewEntry({...newEntry, projectName: e.target.value})} /></div>
-                  <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Team Name</label><Input value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} /></div>
-                </div>
-                <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Challenge</label><Select value={newEntry.challengeId} onValueChange={(val: any) => setNewEntry({...newEntry, challengeId: val})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{CHALLENGES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
-                <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Description</label><Textarea value={newEntry.projectDescription} onChange={e => setNewEntry({...newEntry, projectDescription: e.target.value})} /></div>
-              </div>
-              <DialogFooter><Button className="bg-accent uppercase text-xs font-bold" onClick={handleSaveEntry}>Save Mission Data</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        <div className="lg:col-span-2 glass-card rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
-            <h2 className="font-bold uppercase text-xs tracking-widest text-accent flex items-center gap-2"><Settings2 className="w-4 h-4" /> Hackathon Command Log</h2>
-            {appConfig?.phase === 'FINALS' && <Badge variant="outline" className="text-[9px] border-accent/20 text-accent uppercase">Finalist Sequence Enabled</Badge>}
+      <Tabs defaultValue="hackathon" className="w-full">
+        <TabsList className="bg-white/5 border border-white/10 p-1 mb-8">
+          <TabsTrigger value="hackathon" className="data-[state=active]:bg-accent data-[state=active]:text-white uppercase text-[10px] font-black tracking-widest px-8">
+            <Rocket className="w-4 h-4 mr-2" /> Hackathon Hub
+          </TabsTrigger>
+          <TabsTrigger value="programming" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white uppercase text-[10px] font-black tracking-widest px-8">
+            <Code className="w-4 h-4 mr-2" /> Programming Elite
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="hackathon">
+          <div className="flex justify-end gap-4 mb-8">
+            <Dialog open={isProcessing} onOpenChange={setIsProcessing}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 uppercase text-xs font-bold tracking-widest"><Zap className="w-4 h-4 mr-2" /> Leaderboard</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl bg-card border-border">
+                <DialogHeader><DialogTitle className="uppercase italic">Mission Standings</DialogTitle></DialogHeader>
+                <div className="py-6">
+                  {processingStatus === "IDLE" && (
+                    <div className="grid grid-cols-2 gap-4 text-center py-12">
+                      <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-accent cursor-pointer" onClick={() => handleProcessLeaderboard("TOP12")}>
+                        <Trophy className="w-12 h-12 text-accent/50 mx-auto mb-4" />
+                        <h3 className="font-bold text-white uppercase text-xs">Publish Top 12</h3>
+                      </div>
+                      <div className="p-6 bg-white/5 rounded-xl border border-white/10 hover:border-yellow-500 cursor-pointer" onClick={() => handleProcessLeaderboard("TOP3")}>
+                        <Star className="w-12 h-12 text-yellow-500/50 mx-auto mb-4" />
+                        <h3 className="font-bold text-white uppercase text-xs">Publish Top 3</h3>
+                      </div>
+                    </div>
+                  )}
+                  {processingStatus === "CALCULATING" && <div className="text-center py-12"><Loader2 className="w-12 h-12 text-accent animate-spin mx-auto" /></div>}
+                  {processingStatus === "READY" && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                         <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
+                            <p className="text-[9px] uppercase text-accent font-bold mb-1">Problem Solver</p>
+                            <p className="text-[10px] text-white font-black truncate">{specialAwards.problemFit?.team}</p>
+                         </div>
+                         <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
+                            <p className="text-[9px] uppercase text-accent font-bold mb-1">Tech Execution</p>
+                            <p className="text-[10px] text-white font-black truncate">{specialAwards.techExecution?.team}</p>
+                         </div>
+                         <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
+                            <p className="text-[9px] uppercase text-accent font-bold mb-1">Impactful Innovation</p>
+                            <p className="text-[10px] text-white font-black truncate">{specialAwards.innovationImpact?.team}</p>
+                         </div>
+                         <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
+                            <p className="text-[9px] uppercase text-accent font-bold mb-1">Best Pitch</p>
+                            <p className="text-[10px] text-white font-black truncate">{specialAwards.presentation?.team}</p>
+                         </div>
+                         <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg text-center">
+                            <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Best UI/UX</p>
+                            <p className="text-[10px] text-white font-black truncate">{specialAwards.uiux?.team}</p>
+                         </div>
+                         <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg text-center">
+                            <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Sustainability</p>
+                            <p className="text-[10px] text-white font-black truncate">{specialAwards.sustainability?.team}</p>
+                         </div>
+                      </div>
+                      <ScrollArea className="h-72">
+                        <Table>
+                          <TableHeader className="bg-white/5 sticky top-0"><TableRow><TableHead>Rank</TableHead><TableHead>Team</TableHead><TableHead className="text-right">Avg Score</TableHead></TableRow></TableHeader>
+                          <TableBody>
+                            {rankedResults.map((res, i) => (
+                              <TableRow key={res.id} className={cn(i < (publishingType === "TOP12" ? 12 : 3) && "bg-accent/5")}>
+                                <TableCell className="font-bold">#{i + 1}</TableCell>
+                                <TableCell className="font-medium text-xs">{res.teamName}</TableCell>
+                                <TableCell className="text-right font-mono text-xs">{res.avgScore}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                      <div className="flex gap-4">
+                        <Button variant="ghost" onClick={() => setProcessingStatus("IDLE")} className="uppercase text-xs font-bold">Back</Button>
+                        <Button onClick={handleApplyRanks} className="flex-1 bg-accent uppercase font-bold text-xs">
+                          {publishingType === "TOP12" ? "Publish Top 12 Finalists" : "Publish Winners & Special Awards"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAdding} onOpenChange={setIsAdding}>
+              <DialogTrigger asChild>
+                <Button className="bg-accent hover:bg-accent/80 text-white uppercase text-xs font-bold tracking-widest"><Plus className="w-4 h-4 mr-2" /> New Entry</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl bg-card border-border">
+                <DialogHeader><DialogTitle className="uppercase italic">Deploy Mission Entry</DialogTitle></DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Project Name</label><Input value={newEntry.projectName} onChange={e => setNewEntry({...newEntry, projectName: e.target.value})} /></div>
+                    <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Team Name</label><Input value={newEntry.teamName} onChange={e => setNewEntry({...newEntry, teamName: e.target.value})} /></div>
+                  </div>
+                  <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Challenge</label><Select value={newEntry.challengeId} onValueChange={(val: any) => setNewEntry({...newEntry, challengeId: val})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{CHALLENGES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+                  <div className="space-y-2"><label className="text-[10px] uppercase text-accent tracking-widest">Description</label><Textarea value={newEntry.projectDescription} onChange={e => setNewEntry({...newEntry, projectDescription: e.target.value})} /></div>
+                </div>
+                <DialogFooter><Button className="bg-accent uppercase text-xs font-bold" onClick={handleSaveEntry}>Save Mission Data</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
-          <Table>
-            <TableHeader className="bg-white/5">
-              <TableRow>
-                {appConfig?.phase === 'FINALS' && <TableHead className="w-16">Seq</TableHead>}
-                <TableHead>Project & Team</TableHead>
-                <TableHead>Phase Access</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEntries?.map((entry, idx) => (
-                <TableRow key={entry.id}>
-                  {appConfig?.phase === 'FINALS' && (
-                    <TableCell>
-                      <div className="flex flex-col items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-accent/50 disabled:opacity-20" disabled={idx === 0} onClick={() => handleMoveRank(entry.id, 'UP')}><ChevronUp className="w-4 h-4" /></Button>
-                        <span className="text-[10px] font-bold text-white">{entry.finalRank || idx + 1}</span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-accent/50 disabled:opacity-20" disabled={idx === filteredEntries.length - 1} onClick={() => handleMoveRank(entry.id, 'DOWN')}><ChevronDown className="w-4 h-4" /></Button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <div className="lg:col-span-2 glass-card rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+                <h2 className="font-bold uppercase text-xs tracking-widest text-accent flex items-center gap-2"><Settings2 className="w-4 h-4" /> Hackathon Command Log</h2>
+              </div>
+              <Table>
+                <TableHeader className="bg-white/5">
+                  <TableRow>
+                    {appConfig?.phase === 'FINALS' && <TableHead className="w-16">Seq</TableHead>}
+                    <TableHead>Project & Team</TableHead>
+                    <TableHead>Phase Access</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEntries?.map((entry, idx) => (
+                    <TableRow key={entry.id}>
+                      {appConfig?.phase === 'FINALS' && (
+                        <TableCell>
+                          <div className="flex flex-col items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-accent/50 disabled:opacity-20" disabled={idx === 0} onClick={() => handleMoveRank(entry.id, 'UP')}><ChevronUp className="w-4 h-4" /></Button>
+                            <span className="text-[10px] font-bold text-white">{entry.finalRank || idx + 1}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-accent/50 disabled:opacity-20" disabled={idx === filteredEntries.length - 1} onClick={() => handleMoveRank(entry.id, 'DOWN')}><ChevronDown className="w-4 h-4" /></Button>
+                          </div>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-sm">{entry.projectName}</span>
+                            {entry.isPeoplesChoice && <Heart className="w-3 h-3 text-red-500 fill-red-500" />}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground uppercase">{entry.teamName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {entry.top10Published ? (
+                          <div className="flex items-center gap-2">
+                            {editingPitchLink?.id === entry.id ? (
+                              <div className="flex items-center gap-2">
+                                <Input className="h-7 text-[10px] w-32" value={editingPitchLink.url} onChange={e => setEditingPitchLink({...editingPitchLink, url: e.target.value})} />
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-accent" onClick={() => handleSavePitchLink(entry.id)}><Save className="w-3.5 h-3.5" /></Button>
+                              </div>
+                            ) : (
+                              <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase border-accent/30 text-accent" onClick={() => setEditingPitchLink({id: entry.id, url: entry.pitchDeckLink || ""})}>
+                                <Presentation className="w-3 h-3 mr-1" /> {entry.pitchDeckLink ? "Update Pitch" : "Add Pitch"}
+                              </Button>
+                            )}
+                          </div>
+                        ) : <Badge variant="ghost" className="text-[9px] uppercase opacity-40">Awaiting Finalist Status</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewScores(entry)} className="text-accent h-8 w-8"><BarChart3 className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditEntry(entry)} className="text-accent/60 h-8 w-8"><Edit2 className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)} className="text-destructive h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="space-y-8">
+               <div className="glass-card rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-white/10 bg-white/5 flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-red-500" />
+                    <h2 className="font-bold uppercase text-xs tracking-widest text-accent">People's Choice</h2>
+                  </div>
+                  <div className="p-6 space-y-4">
+                     <Select value={peoplesChoiceWinner?.id || "NONE"} onValueChange={handleSetPeoplesChoice}>
+                        <SelectTrigger className="bg-black/20 border-white/10 text-xs font-bold uppercase"><SelectValue placeholder="Select Winner" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">None / Reset</SelectItem>
+                          {entries?.map(e => <SelectItem key={e.id} value={e.id}>{e.teamName}</SelectItem>)}
+                        </SelectContent>
+                     </Select>
+                  </div>
+               </div>
+
+               <div className="glass-card rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-white/10 bg-white/5 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Judge Status</h2>
+                </div>
+                <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
+                  {judges?.map((judge) => {
+                    const completedCount = judge.judgedEntries?.length || 0;
+                    const progress = totalEntries > 0 ? (completedCount / totalEntries) * 100 : 0;
+                    const isActive = judge.isActive !== false;
+                    return (
+                      <div key={judge.id} className={cn("p-4 rounded-lg border", isActive ? "bg-white/5 border-white/10" : "bg-destructive/5 border-destructive/20 opacity-60")}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex flex-col"><span className="font-bold text-white text-xs">{judge.name}</span><span className="text-[9px] text-muted-foreground">@{judge.username}</span></div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-accent" onClick={() => handleToggleJudgeStatus(judge.id, isActive)}><Power className="w-3.5 h-3.5" /></Button>
+                        </div>
+                        <Progress value={progress} className="h-1" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="programming">
+          <div className="flex justify-end mb-8">
+            <Dialog open={isAddingWinner} onOpenChange={setIsAddingWinner}>
+              <DialogTrigger asChild>
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white uppercase text-xs font-bold tracking-widest">
+                  <Plus className="w-4 h-4 mr-2" /> New Programming Champion
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl bg-card border-border">
+                <DialogHeader><DialogTitle className="uppercase italic">Enroll Programming Elite</DialogTitle></DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><label className="text-[10px] uppercase text-purple-400 tracking-widest">Champion Name</label><Input value={newWinner.name} onChange={e => setNewWinner({...newWinner, name: e.target.value})} /></div>
+                    <div className="space-y-2"><label className="text-[10px] uppercase text-purple-400 tracking-widest">School</label><Input value={newWinner.school} onChange={e => setNewWinner({...newWinner, school: e.target.value})} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase text-purple-400 tracking-widest">Division</label>
+                      <Select value={newWinner.category} onValueChange={(val: any) => setNewWinner({...newWinner, category: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="COLLEGE">COLLEGE</SelectItem>
+                          <SelectItem value="HIGH_SCHOOL">HIGH SCHOOL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase text-purple-400 tracking-widest">Rank</label>
+                      <Select value={String(newWinner.place)} onValueChange={(val: any) => setNewWinner({...newWinner, place: Number(val) as 1 | 2 | 3})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1st Place (Champion)</SelectItem>
+                          <SelectItem value="2">2nd Place</SelectItem>
+                          <SelectItem value="3">3rd Place</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2"><label className="text-[10px] uppercase text-purple-400 tracking-widest">Picture URL (Drive Link)</label><Input value={newWinner.pictureUrl} onChange={e => setNewWinner({...newWinner, pictureUrl: e.target.value})} /></div>
+                  <div className="space-y-2"><label className="text-[10px] uppercase text-purple-400 tracking-widest">School Logo URL (Drive Link)</label><Input value={newWinner.schoolLogoUrl} onChange={e => setNewWinner({...newWinner, schoolLogoUrl: e.target.value})} /></div>
+                </div>
+                <DialogFooter><Button className="bg-purple-600 uppercase text-xs font-bold" onClick={handleSaveWinner}>Archive Champion</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="glass-card rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+              <h2 className="font-bold uppercase text-xs tracking-widest text-purple-400 flex items-center gap-2"><Code className="w-4 h-4" /> Programming Hall of Fame</h2>
+            </div>
+            <Table>
+              <TableHeader className="bg-white/5">
+                <TableRow>
+                  <TableHead>Division</TableHead>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>School</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {winners?.sort((a, b) => a.category.localeCompare(b.category) || a.place - b.place).map((winner) => (
+                  <TableRow key={winner.id}>
+                    <TableCell><Badge variant="outline" className="text-[9px] uppercase border-purple-500/30 text-purple-400">{winner.category.replace('_', ' ')}</Badge></TableCell>
+                    <TableCell><span className="font-black text-white">#{winner.place}</span></TableCell>
+                    <TableCell><span className="font-bold text-white text-sm">{winner.name}</span></TableCell>
+                    <TableCell><span className="text-[10px] text-muted-foreground uppercase">{winner.school}</span></TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditWinner(winner)} className="text-purple-400/60 h-8 w-8"><Edit2 className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteWinner(winner.id)} className="text-destructive h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
-                  )}
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">{entry.projectName}</span>
-                        {entry.isPeoplesChoice && <Heart className="w-3 h-3 text-red-500 fill-red-500" />}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground uppercase">{entry.teamName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {entry.top10Published ? (
-                      <div className="flex items-center gap-2">
-                        {editingPitchLink?.id === entry.id ? (
-                          <div className="flex items-center gap-2">
-                            <Input className="h-7 text-[10px] w-32" value={editingPitchLink.url} onChange={e => setEditingPitchLink({...editingPitchLink, url: e.target.value})} />
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-accent" onClick={() => handleSavePitchLink(entry.id)}><Save className="w-3.5 h-3.5" /></Button>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase border-accent/30 text-accent" onClick={() => setEditingPitchLink({id: entry.id, url: entry.pitchDeckLink || ""})}>
-                            <Presentation className="w-3 h-3 mr-1" /> {entry.pitchDeckLink ? "Update Pitch" : "Add Pitch"}
-                          </Button>
-                        )}
-                      </div>
-                    ) : <Badge variant="ghost" className="text-[9px] uppercase opacity-40">Awaiting Finalist Status</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleViewScores(entry)} className="text-accent h-8 w-8"><BarChart3 className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleEditEntry(entry)} className="text-accent/60 h-8 w-8"><Edit2 className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)} className="text-destructive h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="space-y-8">
-           <div className="glass-card rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-white/10 bg-white/5 flex items-center gap-2">
-                <Heart className="w-4 h-4 text-red-500" />
-                <h2 className="font-bold uppercase text-xs tracking-widest text-accent">People's Choice</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                 <Select value={peoplesChoiceWinner?.id || "NONE"} onValueChange={handleSetPeoplesChoice}>
-                    <SelectTrigger className="bg-black/20 border-white/10 text-xs font-bold uppercase"><SelectValue placeholder="Select Winner" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">None / Reset</SelectItem>
-                      {entries?.map(e => <SelectItem key={e.id} value={e.id}>{e.teamName}</SelectItem>)}
-                    </SelectContent>
-                 </Select>
-                 {peoplesChoiceWinner && (
-                   <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg flex items-center justify-between">
-                      <div className="flex flex-col"><span className="text-[10px] text-white font-black uppercase tracking-widest">{peoplesChoiceWinner.teamName}</span><span className="text-[9px] text-muted-foreground uppercase">{peoplesChoiceWinner.projectName}</span></div>
-                      <Badge className="bg-red-500/20 text-red-500 border-none h-5 text-[8px] uppercase font-bold">Selected</Badge>
-                   </div>
-                 )}
-              </div>
-           </div>
-
-           <div className="glass-card rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-white/10 bg-white/5 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <h2 className="font-bold uppercase text-xs tracking-widest text-accent">Judge Status</h2>
-            </div>
-            <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
-              {judges?.map((judge) => {
-                const completedCount = judge.judgedEntries?.length || 0;
-                const progress = totalEntries > 0 ? (completedCount / totalEntries) * 100 : 0;
-                const isActive = judge.isActive !== false;
-                return (
-                  <div key={judge.id} className={cn("p-4 rounded-lg border", isActive ? "bg-white/5 border-white/10" : "bg-destructive/5 border-destructive/20 opacity-60")}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex flex-col"><span className="font-bold text-white text-xs">{judge.name}</span><span className="text-[9px] text-muted-foreground">@{judge.username}</span></div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-accent" onClick={() => handleToggleJudgeStatus(judge.id, isActive)}><Power className="w-3.5 h-3.5" /></Button>
-                    </div>
-                    <Progress value={progress} className="h-1" />
-                  </div>
-                );
-              })}
-            </div>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
         <DialogContent className="max-w-4xl bg-card border-border">
@@ -812,3 +936,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
