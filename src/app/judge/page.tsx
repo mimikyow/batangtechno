@@ -197,17 +197,20 @@ export default function JudgePage() {
   const filteredEntries = (entries || [])
     .filter(e => {
       const matchesCategory = filter === "ALL" || e.challengeId === filter;
-      
-      // IF phase is FINALS: Show ONLY finalists (top10Published) who have pitch decks
       if (isFinalsPhase) {
         return matchesCategory && e.top10Published && e.pitchDeckLink;
       }
-      
-      // IF phase is STANDARD: Show all approved entries
       return matchesCategory;
     })
     .sort((a, b) => {
-      // Sort unjudged items to the top
+      // Primary sort: Custom Sequence if in Finals phase
+      if (isFinalsPhase) {
+        const rankA = a.finalRank || 999;
+        const rankB = b.finalRank || 999;
+        if (rankA !== rankB) return rankA - rankB;
+      }
+      
+      // Secondary sort: Evaluation status (unjudged items first)
       const aJudged = isJudged(a.id);
       const bJudged = isJudged(b.id);
       if (aJudged === bJudged) return 0;
@@ -271,6 +274,7 @@ export default function JudgePage() {
             ) : filteredEntries.map(entry => {
               const judged = isJudged(entry.id);
               const isSelected = selectedEntry?.id === entry.id;
+              const displayRank = entry.finalRank ? `#${entry.finalRank}` : null;
               
               return (
                 <button
@@ -287,9 +291,12 @@ export default function JudgePage() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className={cn(
-                      "font-bold text-sm",
+                      "font-bold text-sm flex items-center gap-2",
                       isSelected ? "text-white" : judged ? "text-accent/80" : "text-white"
-                    )}>{entry.teamName}</div>
+                    )}>
+                      {isFinalsPhase && displayRank && <span className="text-accent/50 font-black">{displayRank}</span>}
+                      {entry.teamName}
+                    </div>
                     {judged && <Lock className="w-3 h-3 text-accent/50" />}
                   </div>
                   <div className="text-[10px] text-muted-foreground uppercase">
@@ -365,14 +372,6 @@ export default function JudgePage() {
                               <Badge variant="outline" className="text-[9px] border-accent/30 text-accent">{crit.weight}</Badge>
                             </div>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">{crit.desc}</p>
-                            {crit.key === 'compliance' && (
-                              <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                <h5 className="text-[9px] font-bold text-accent uppercase mb-1 flex items-center gap-1">
-                                  <AlertCircle className="w-3 h-3" /> Mandatory Requirements
-                                </h5>
-                                <p className="text-[9px] text-slate-400 italic leading-snug">{COMPLIANCE_DETAILS}</p>
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
