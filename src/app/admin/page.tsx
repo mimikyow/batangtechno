@@ -333,13 +333,20 @@ export default function AdminPage() {
   };
 
   const handleSetPeoplesChoice = (entryId: string) => {
+    // First, clear isPeoplesChoice from all entries
     entries?.forEach(e => {
       if (e.isPeoplesChoice) {
         updateDocumentNonBlocking(doc(db, "entries", e.id), { isPeoplesChoice: false });
       }
     });
-    updateDocumentNonBlocking(doc(db, "entries", entryId), { isPeoplesChoice: true });
-    toast({ title: "People's Choice Updated" });
+
+    // If a valid entryId was selected (not the "NONE" option), set it
+    if (entryId && entryId !== "NONE") {
+      updateDocumentNonBlocking(doc(db, "entries", entryId), { isPeoplesChoice: true });
+      toast({ title: "People's Choice Updated" });
+    } else {
+      toast({ title: "People's Choice Cleared" });
+    }
   };
 
   const handleCreateJudge = async () => {
@@ -728,9 +735,12 @@ export default function AdminPage() {
                 <h2 className="font-bold uppercase text-xs tracking-widest text-accent">People's Choice</h2>
               </div>
               <div className="p-6 space-y-4">
-                 <Select value={peoplesChoiceWinner?.id || ""} onValueChange={handleSetPeoplesChoice}>
+                 <Select value={peoplesChoiceWinner?.id || "NONE"} onValueChange={handleSetPeoplesChoice}>
                     <SelectTrigger className="bg-black/20 border-white/10 text-xs font-bold uppercase"><SelectValue placeholder="Select Winner" /></SelectTrigger>
-                    <SelectContent>{entries?.map(e => <SelectItem key={e.id} value={e.id}>{e.teamName}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      <SelectItem value="NONE">None / Reset</SelectItem>
+                      {entries?.map(e => <SelectItem key={e.id} value={e.id}>{e.teamName}</SelectItem>)}
+                    </SelectContent>
                  </Select>
                  {peoplesChoiceWinner && (
                    <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg flex items-center justify-between">
