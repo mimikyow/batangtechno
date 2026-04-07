@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, Edit3, PowerOff } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, PowerOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, arrayUnion, getDoc } from "firebase/firestore";
@@ -41,7 +41,9 @@ export default function JudgePage() {
   const [filter, setFilter] = useState("ALL");
   const [isLoadingScores, setIsLoadingScores] = useState(false);
 
-  const activeCriteria = appConfig?.phase === 'FINALS' ? FINALS_CRITERIA : STANDARD_CRITERIA;
+  const activePhase = appConfig?.phase || 'STANDARD';
+  const isFinalsPhase = activePhase === 'FINALS';
+  const activeCriteria = isFinalsPhase ? FINALS_CRITERIA : STANDARD_CRITERIA;
 
   const [scores, setScores] = useState<Record<string, string | number>>({
     comment: ""
@@ -175,7 +177,7 @@ export default function JudgePage() {
       submissionDate: new Date().toISOString(),
       adminUploaded: false,
       comment: scores.comment,
-      phase: appConfig?.phase || 'STANDARD'
+      phase: activePhase
     }, { merge: true });
 
     if (judgeDocRef) {
@@ -192,17 +194,20 @@ export default function JudgePage() {
     return judgeRole?.judgedEntries?.includes(entryId);
   };
 
-  const isFinalistPhaseInApp = entries?.some(e => e.top10Published);
-
   const filteredEntries = (entries || [])
     .filter(e => {
       const matchesCategory = filter === "ALL" || e.challengeId === filter;
-      if (isFinalistPhaseInApp) {
+      
+      // IF phase is FINALS: Show ONLY finalists (top10Published) who have pitch decks
+      if (isFinalsPhase) {
         return matchesCategory && e.top10Published && e.pitchDeckLink;
       }
+      
+      // IF phase is STANDARD: Show all approved entries
       return matchesCategory;
     })
     .sort((a, b) => {
+      // Sort unjudged items to the top
       const aJudged = isJudged(a.id);
       const bJudged = isJudged(b.id);
       if (aJudged === bJudged) return 0;
@@ -225,7 +230,7 @@ export default function JudgePage() {
             <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
               <p className="text-[10px] text-accent font-black uppercase tracking-widest flex items-center gap-2">
                 <Filter className="w-3 h-3" /> 
-                Phase: {appConfig?.phase === 'FINALS' ? "Final Frontier" : "Standard Selection"}
+                Phase: {isFinalsPhase ? "Final Frontier" : "Standard Selection"}
               </p>
             </div>
 
@@ -349,8 +354,8 @@ export default function JudgePage() {
                     </div>
 
                     <div className="glass-card p-6 rounded-xl">
-                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-xs">
-                        <Scale className="w-4 h-4 text-accent" /> Matrix Guide ({appConfig?.phase === 'FINALS' ? 'FINALS' : 'STANDARD'})
+                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
+                        <Scale className="w-4 h-4 text-accent" /> Matrix Guide ({isFinalsPhase ? 'FINAL FRONTIER' : 'STANDARD SELECTION'})
                       </h3>
                       <div className="space-y-6">
                         {activeCriteria.map(crit => (
