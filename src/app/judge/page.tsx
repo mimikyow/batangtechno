@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, PowerOff } from "lucide-react";
+import { CheckCircle, Info, AlertCircle, ShieldAlert, Loader2, Scale, KeyRound, Lock, Presentation, Github, Filter, PowerOff, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, useAuth } from "@/firebase";
 import { doc, collection, arrayUnion, getDoc } from "firebase/firestore";
@@ -17,8 +17,6 @@ import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/no
 import { getGoogleDriveEmbedUrl, cn } from "@/lib/utils";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { CHALLENGES, STANDARD_CRITERIA, FINALS_CRITERIA } from "@/lib/constants";
-
-const COMPLIANCE_DETAILS = "The video must showcase the working prototype, emphasizing its key features and functionality. It should briefly explain the problem, the proposed solution, and its real-world application. Teams must also clearly identify the technologies used, including programming languages, frameworks, libraries, platforms, APIs, and any AI tools. The presentation should reflect the actual state of the prototype—purely conceptual or slide-only videos may receive lower scores. The video length should be 3–5 minutes; failure to meet this may result in deductions.";
 
 export default function JudgePage() {
   const { user, isUserLoading } = useUser();
@@ -44,6 +42,10 @@ export default function JudgePage() {
   const activePhase = appConfig?.phase || 'STANDARD';
   const isFinalsPhase = activePhase === 'FINALS';
   const activeCriteria = isFinalsPhase ? FINALS_CRITERIA : STANDARD_CRITERIA;
+
+  // Split criteria for separate rendering
+  const coreCriteria = activeCriteria.filter(c => !['uiux', 'sustainability'].includes(c.key));
+  const specialCriteria = activeCriteria.filter(c => ['uiux', 'sustainability'].includes(c.key));
 
   const [scores, setScores] = useState<Record<string, string | number>>({
     comment: ""
@@ -203,14 +205,11 @@ export default function JudgePage() {
       return matchesCategory;
     })
     .sort((a, b) => {
-      // Primary sort: Custom Sequence if in Finals phase
       if (isFinalsPhase) {
         const rankA = a.finalRank || 999;
         const rankB = b.finalRank || 999;
         if (rankA !== rankB) return rankA - rankB;
       }
-      
-      // Secondary sort: Evaluation status (unjudged items first)
       const aJudged = isJudged(a.id);
       const bJudged = isJudged(b.id);
       if (aJudged === bJudged) return 0;
@@ -393,30 +392,67 @@ export default function JudgePage() {
                       <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Retrieving Logs...</p>
                     </div>
                   ) : (
-                    <div className="space-y-10">
-                      {activeCriteria.map(crit => (
-                        <div key={crit.key} className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <label className="text-sm font-bold text-white uppercase tracking-wider">{crit.label}</label>
-                            <div className="flex items-center gap-2">
-                              <Input 
-                                type="number"
-                                placeholder="--"
-                                className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                value={scores[crit.key]}
-                                onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
-                              />
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase">/ {crit.max}</span>
+                    <div className="space-y-8">
+                      {/* Core Mission Criteria Section */}
+                      <div className="space-y-10">
+                        {coreCriteria.map(crit => (
+                          <div key={crit.key} className="space-y-4">
+                            <div className="flex justify-between items-center">
+                              <label className="text-sm font-bold text-white uppercase tracking-wider">{crit.label}</label>
+                              <div className="flex items-center gap-2">
+                                <Input 
+                                  type="number"
+                                  placeholder="--"
+                                  className="w-16 h-8 text-center bg-black/40 border-white/10 text-accent font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  value={scores[crit.key]}
+                                  onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
+                                />
+                                <span className="text-[10px] text-muted-foreground font-bold uppercase">/ {crit.max}</span>
+                              </div>
                             </div>
+                            <Slider 
+                              max={crit.max} 
+                              step={1} 
+                              value={[Number(scores[crit.key]) || 0]} 
+                              onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
+                            />
                           </div>
-                          <Slider 
-                            max={crit.max} 
-                            step={1} 
-                            value={[Number(scores[crit.key]) || 0]} 
-                            onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
-                          />
+                        ))}
+                      </div>
+
+                      {/* Special Awards Container */}
+                      {specialCriteria.length > 0 && (
+                        <div className="p-6 bg-accent/5 border border-accent/20 rounded-xl space-y-10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-accent" />
+                            <h4 className="text-[10px] font-black uppercase text-accent tracking-[0.2em]">Special Awards Recon</h4>
+                          </div>
+                          {specialCriteria.map(crit => (
+                            <div key={crit.key} className="space-y-4">
+                              <div className="flex justify-between items-center">
+                                <label className="text-sm font-bold text-white uppercase tracking-wider">{crit.label}</label>
+                                <div className="flex items-center gap-2">
+                                  <Input 
+                                    type="number"
+                                    placeholder="--"
+                                    className="w-16 h-8 text-center bg-black/60 border-accent/20 text-accent font-mono font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    value={scores[crit.key]}
+                                    onChange={(e) => handleScoreChange(crit.key, e.target.value, crit.max)}
+                                  />
+                                  <span className="text-[10px] text-muted-foreground font-bold uppercase">/ {crit.max}</span>
+                                </div>
+                              </div>
+                              <Slider 
+                                max={crit.max} 
+                                step={1} 
+                                value={[Number(scores[crit.key]) || 0]} 
+                                onValueChange={(val) => handleScoreChange(crit.key, val[0], crit.max)}
+                                className="[&_[role=slider]]:border-accent"
+                              />
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
 
                       <div className="space-y-2 pt-4">
                         <label className="text-sm font-bold text-white uppercase tracking-wider">Confidential Comments</label>
