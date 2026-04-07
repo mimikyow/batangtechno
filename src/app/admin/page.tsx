@@ -411,6 +411,12 @@ export default function AdminPage() {
   };
 
   const totalEntries = entries?.length || 0;
+  const filteredEntries = entries?.filter(entry => {
+    if (appConfig?.phase === 'FINALS') {
+      return entry.top10Published;
+    }
+    return true;
+  });
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -747,7 +753,7 @@ export default function AdminPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries?.map((entry) => (
+            {filteredEntries?.map((entry) => (
               <TableRow key={entry.id}>
                 <TableCell>
                   <div className="flex flex-col">
