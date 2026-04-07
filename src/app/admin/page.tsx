@@ -111,7 +111,8 @@ export default function AdminPage() {
         
         scores.push({
           ...data,
-          judgeName: judge?.name || "Unknown Judge"
+          judgeName: judge?.name || "Unknown Judge",
+          isJudgeActive: judge?.isActive !== false
         });
       });
       
@@ -188,7 +189,11 @@ export default function AdminPage() {
         
         snapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.scores) {
+          const judgeId = data.judgeId || doc.id;
+          const judge = (judges || []).find(j => j.id === judgeId);
+
+          // CRITICAL: Only consider scores from judges who are currently active
+          if (judge && judge.isActive !== false && data.scores) {
             const sum = Object.values(data.scores).reduce((a: any, b: any) => a + b, 0) as number;
             totalWeightedScore += sum;
             submissionCount++;
@@ -222,7 +227,8 @@ export default function AdminPage() {
 
       // Handle Ask Lex PH Academy Award Nomination
       const specialJudge = judges?.find(j => j.email?.toLowerCase() === "fcveroya@asklexph.com");
-      if (specialJudge?.projectManagementNomination) {
+      // Nomination is only valid if the special judge is active
+      if (specialJudge && specialJudge.isActive !== false && specialJudge.projectManagementNomination) {
         const nominatedEntry = entries.find(e => e.id === specialJudge.projectManagementNomination);
         if (nominatedEntry) {
           awardsCalc.projectManagement = { team: nominatedEntry.teamName, score: 100, id: nominatedEntry.id };
@@ -766,9 +772,12 @@ export default function AdminPage() {
               <ScrollArea className="h-[50vh]">
                 <div className="space-y-4 pr-4">
                   {entryScores.map((score, idx) => (
-                    <div key={idx} className="p-6 bg-white/5 rounded-xl border border-white/10">
+                    <div key={idx} className={cn("p-6 bg-white/5 rounded-xl border", score.isJudgeActive ? "border-white/10" : "border-destructive/20 opacity-60")}>
                       <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
-                        <div className="font-bold text-accent uppercase tracking-widest text-xs">{score.judgeName}</div>
+                        <div className="flex items-center gap-3">
+                           <div className="font-bold text-accent uppercase tracking-widest text-xs">{score.judgeName}</div>
+                           {!score.isJudgeActive && <Badge variant="outline" className="text-[8px] text-destructive border-destructive/30 uppercase">Deactivated (Excluded from Calc)</Badge>}
+                        </div>
                         <Badge variant="outline" className="text-[9px] border-white/20 uppercase">{score.phase || "STANDARD"}</Badge>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
