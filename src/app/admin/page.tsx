@@ -179,7 +179,10 @@ export default function AdminPage() {
         projectManagement: { team: "Not Selected", score: 0 }
       };
       
-      for (const entry of entries) {
+      // Filter entries if we are calculating Top 3 (only Finalists)
+      const targetEntries = type === "TOP3" ? entries.filter(e => e.top10Published) : entries;
+
+      for (const entry of targetEntries) {
         const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
         const snapshot = await getDocs(scoresRef);
         
@@ -192,8 +195,10 @@ export default function AdminPage() {
           const judgeId = data.judgeId || doc.id;
           const judge = (judges || []).find(j => j.id === judgeId);
 
-          // CRITICAL: Only consider scores from judges who are currently active
-          if (judge && judge.isActive !== false && data.scores) {
+          // CRITICAL: Filter by judge status AND evaluation phase if we are in Top 3 mode
+          const isPhaseValid = type === "TOP3" ? data.phase === "FINALS" : true;
+
+          if (judge && judge.isActive !== false && isPhaseValid && data.scores) {
             const sum = Object.values(data.scores).reduce((a: any, b: any) => a + b, 0) as number;
             totalWeightedScore += sum;
             submissionCount++;
@@ -214,6 +219,7 @@ export default function AdminPage() {
           isFinalist: !!entry.top10Published
         });
 
+        // Special awards are only for finalists in the Top 3 context
         if (entry.top10Published && submissionCount > 0) {
           Object.keys(awardsCalc).forEach(key => {
             if (key === 'projectManagement') return;
@@ -227,7 +233,6 @@ export default function AdminPage() {
 
       // Handle Ask Lex PH Academy Award Nomination
       const specialJudge = judges?.find(j => j.email?.toLowerCase() === "fcveroya@asklexph.com");
-      // Nomination is only valid if the special judge is active
       if (specialJudge && specialJudge.isActive !== false && specialJudge.projectManagementNomination) {
         const nominatedEntry = entries.find(e => e.id === specialJudge.projectManagementNomination);
         if (nominatedEntry) {
@@ -311,7 +316,6 @@ export default function AdminPage() {
           }
         });
 
-        // Ensure People's Choice is published too
         const peoplesChoiceWinner = entries?.find(e => e.isPeoplesChoice);
         if (peoplesChoiceWinner) {
           const ref = doc(db, "entries", peoplesChoiceWinner.id);
@@ -329,13 +333,11 @@ export default function AdminPage() {
   };
 
   const handleSetPeoplesChoice = (entryId: string) => {
-    // Clear previous
     entries?.forEach(e => {
       if (e.isPeoplesChoice) {
         updateDocumentNonBlocking(doc(db, "entries", e.id), { isPeoplesChoice: false });
       }
     });
-    // Set new
     updateDocumentNonBlocking(doc(db, "entries", entryId), { isPeoplesChoice: true });
     toast({ title: "People's Choice Updated" });
   };
