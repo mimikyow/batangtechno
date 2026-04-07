@@ -70,4 +70,18 @@ export const FINALS_CRITERIA = [
     max: 20, 
     desc: "Judges the team’s ability to clearly and effectively communicate their idea within the given time, including the organization of the pitch, quality of visuals, confidence in delivery, and responsiveness during the Q&A session." 
   },
+  {
+    key: "uiux",
+    label: "Best UI/UX Design Award",
+    weight: "Special",
+    max: 10,
+    desc: "Evaluates the aesthetics, user interface, and user experience of the project."
+  },
+  {
+    key: "sustainability",
+    label: "Best Tech for Sustainability Award",
+    weight: "Special",
+    max: 10,
+    desc: "Assesses the project's contribution to environmental or long-term sustainability through technology."
+  }
 ];

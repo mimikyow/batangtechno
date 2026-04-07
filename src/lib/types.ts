@@ -31,6 +31,7 @@ export interface HackathonEntry {
   finalRank?: number;
   pitchDeckLink?: string;
   overallScore?: number;
+  isPeoplesChoice?: boolean;
 }
 
 export interface ProgrammingWinner {
@@ -44,10 +45,16 @@ export interface ProgrammingWinner {
 }
 
 export interface ScoreCriteria {
-  mastery: number;
-  innovation: number;
-  impact: number;
-  compliance: number;
+  mastery?: number;
+  innovation?: number;
+  impact?: number;
+  compliance?: number;
+  problemFit?: number;
+  techExecution?: number;
+  innovationImpact?: number;
+  presentation?: number;
+  uiux?: number;
+  sustainability?: number;
 }
 
 export interface JudgingScore {
@@ -58,4 +65,5 @@ export interface JudgingScore {
   comment: string;
   submissionDate: string;
   adminUploaded: boolean;
+  phase: 'STANDARD' | 'FINALS';
 }
