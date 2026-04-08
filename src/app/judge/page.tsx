@@ -221,7 +221,8 @@ export default function JudgePage() {
     .filter(e => {
       const matchesCategory = filter === "ALL" || e.challengeId === filter;
       if (isFinalsPhase) {
-        return matchesCategory && e.top10Published && e.pitchDeckLink;
+        // Show all finalists in the final round, even without pitch deck
+        return matchesCategory && e.top10Published;
       }
       return matchesCategory;
     })
@@ -368,8 +369,8 @@ export default function JudgePage() {
                   {/* Judging Instructions - TOP */}
                   <Alert className="bg-accent/5 border-accent/20 p-8 rounded-2xl">
                     <BookOpen className="w-6 h-6 text-accent" />
-                    <AlertTitle className="text-xl font-black uppercase tracking-widest text-white mb-4 italic">Judging Instructions</AlertTitle>
-                    <AlertDescription className="space-y-4 text-slate-300 text-base leading-relaxed">
+                    <AlertTitle className="text-2xl font-black uppercase tracking-widest text-white mb-4 italic">Judging Instructions</AlertTitle>
+                    <AlertDescription className="space-y-4 text-slate-300 text-lg leading-relaxed">
                       <p>
                         The judging portal provides all materials for each entry, including the video presentation, project description, source code repository (for code quality review), and pitch deck.
                       </p>
@@ -380,11 +381,11 @@ export default function JudgePage() {
                         You will also evaluate entries for two special awards: Best UI/UX Design Award and Best Tech for Sustainability Award. These are separate and will not affect the overall results.
                       </p>
                       {isSpecialJudge && (
-                        <p className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-500 font-black uppercase text-sm italic">
+                        <p className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-500 font-black uppercase text-base italic">
                           Additionally, as the representative for Ask Lex PH, you will choose the winner for the Excellence in Project Management award from the Top 12 finalists using the dropdown at the top of the page.
                         </p>
                       )}
-                      <p className="text-sm italic font-medium">
+                      <p className="text-base italic font-medium">
                         Please complete your evaluation within each team’s assigned timeslot to avoid delays in the program. Thank you!
                       </p>
                     </AlertDescription>
@@ -392,17 +393,17 @@ export default function JudgePage() {
 
                   {/* Matrix Guide - TOP */}
                   <div className="glass-card p-8 rounded-2xl border-white/10">
-                    <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3 uppercase tracking-[0.2em] italic">
-                      <Scale className="w-6 h-6 text-accent" /> Matrix Guide ({isFinalsPhase ? 'FINAL FRONTIER' : 'STANDARD SELECTION'})
+                    <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3 uppercase tracking-[0.2em] italic">
+                      <Scale className="w-7 h-7 text-accent" /> Matrix Guide ({isFinalsPhase ? 'FINAL FRONTIER' : 'STANDARD SELECTION'})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {activeCriteria.map(crit => (
                         <div key={crit.key} className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-base font-black text-white uppercase tracking-tight">{crit.label}</h4>
-                            <Badge variant="outline" className="text-[11px] border-accent/30 text-accent font-black">{crit.weight}</Badge>
+                            <h4 className="text-lg font-black text-white uppercase tracking-tight">{crit.label}</h4>
+                            <Badge variant="outline" className="text-xs border-accent/30 text-accent font-black px-3 py-1">{crit.weight}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{crit.desc}</p>
+                          <p className="text-base text-muted-foreground leading-relaxed">{crit.desc}</p>
                         </div>
                       ))}
                     </div>
@@ -568,4 +569,3 @@ export default function JudgePage() {
     </div>
   );
 }
-
