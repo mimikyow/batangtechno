@@ -364,6 +364,38 @@ export default function JudgePage() {
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1 space-y-6">
+                  {/* Matrix Guide moved to top */}
+                  <div className="glass-card p-6 rounded-xl">
+                    <h3 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
+                      <Scale className="w-4 h-4 text-accent" /> Matrix Guide ({isFinalsPhase ? 'FINAL FRONTIER' : 'STANDARD SELECTION'})
+                    </h3>
+                    <div className="space-y-6">
+                      {activeCriteria.map(crit => (
+                        <div key={crit.key} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-white uppercase">{crit.label}</h4>
+                            <Badge variant="outline" className="text-[9px] border-accent/30 text-accent">{crit.weight}</Badge>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">{crit.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pitch Deck Link moved above project title/video */}
+                  {selectedEntry.pitchDeckLink && (
+                    <div className="glass-card p-6 rounded-xl border-accent/50 bg-accent/5">
+                      <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                        <Presentation className="w-4 h-4 text-accent" /> Pitch Deck Available
+                      </h3>
+                      <Button asChild className="w-full bg-accent/20 text-accent hover:bg-accent hover:text-white border border-accent/30">
+                        <a href={selectedEntry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
+                          Open Pitch Deck <Presentation className="ml-2 w-4 h-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+
                   <div>
                     <h1 className="text-4xl font-black text-white glow-accent italic">{selectedEntry.projectName || selectedEntry.teamName}</h1>
                     <div className="flex items-center gap-2 mt-2">
@@ -390,18 +422,6 @@ export default function JudgePage() {
                           </Button>
                         </div>
                       )}
-                      {selectedEntry.pitchDeckLink && (
-                        <div className="glass-card p-6 rounded-xl border-accent/50 bg-accent/5">
-                          <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                            <Presentation className="w-4 h-4 text-accent" /> Pitch Deck Available
-                          </h3>
-                          <Button asChild className="w-full bg-accent/20 text-accent hover:bg-accent hover:text-white border border-accent/30">
-                            <a href={selectedEntry.pitchDeckLink} target="_blank" rel="noopener noreferrer">
-                              Open Pitch Deck <Presentation className="ml-2 w-4 h-4" />
-                            </a>
-                          </Button>
-                        </div>
-                      )}
                     </div>
 
                     <div className="glass-card p-6 rounded-xl">
@@ -409,23 +429,6 @@ export default function JudgePage() {
                         <Info className="w-4 h-4 text-accent" /> Project Brief
                       </h3>
                       <p className="text-slate-300 text-sm leading-relaxed">{selectedEntry.projectDescription}</p>
-                    </div>
-
-                    <div className="glass-card p-6 rounded-xl">
-                      <h3 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
-                        <Scale className="w-4 h-4 text-accent" /> Matrix Guide ({isFinalsPhase ? 'FINAL FRONTIER' : 'STANDARD SELECTION'})
-                      </h3>
-                      <div className="space-y-6">
-                        {activeCriteria.map(crit => (
-                          <div key={crit.key} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-bold text-white uppercase">{crit.label}</h4>
-                              <Badge variant="outline" className="text-[9px] border-accent/30 text-accent">{crit.weight}</Badge>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground leading-relaxed">{crit.desc}</p>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </div>
