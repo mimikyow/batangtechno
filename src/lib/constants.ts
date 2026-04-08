@@ -74,14 +74,14 @@ export const FINALS_CRITERIA = [
     key: "uiux",
     label: "Best UI/UX Design Award",
     weight: "Special",
-    max: 10,
+    max: 100,
     desc: "Evaluates the aesthetics, user interface, and user experience of the project."
   },
   {
     key: "sustainability",
     label: "Best Tech for Sustainability Award",
     weight: "Special",
-    max: 10,
+    max: 100,
     desc: "Assesses the project's contribution to environmental or long-term sustainability through technology."
   }
 ];
