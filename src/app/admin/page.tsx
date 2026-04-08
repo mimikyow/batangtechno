@@ -210,7 +210,8 @@ export default function AdminPage() {
           const judgeId = data.judgeId || doc.id;
           const judge = (judges || []).find(j => j.id === judgeId);
 
-          const isPhaseValid = type === "TOP3" ? data.phase === "FINALS" : true;
+          // For Top 3, only consider FINALS phase scores from active judges
+          const isPhaseValid = type === "TOP3" ? (data.scores && data.phase === "FINALS") : true;
 
           if (judge && judge.isActive !== false && isPhaseValid && data.scores) {
             const sum = Object.values(data.scores).reduce((a: any, b: any) => a + b, 0) as number;
@@ -907,13 +908,10 @@ export default function AdminPage() {
             {isLoadingScores ? <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 text-accent animate-spin" /></div> : (
               <ScrollArea className="h-[50vh]">
                 <div className="space-y-4 pr-4">
-                  {entryScores.map((score, idx) => (
-                    <div key={idx} className={cn("p-6 bg-white/5 rounded-xl border", score.isJudgeActive ? "border-white/10" : "border-destructive/20 opacity-60")}>
+                  {entryScores.filter(score => score.isJudgeActive).map((score, idx) => (
+                    <div key={idx} className="p-6 bg-white/5 rounded-xl border border-white/10">
                       <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
-                        <div className="flex items-center gap-3">
-                           <div className="font-bold text-accent uppercase tracking-widest text-xs">{score.judgeName}</div>
-                           {!score.isJudgeActive && <Badge variant="outline" className="text-[8px] text-destructive border-destructive/30 uppercase">Deactivated (Excluded from Calc)</Badge>}
-                        </div>
+                        <div className="font-bold text-accent uppercase tracking-widest text-xs">{score.judgeName}</div>
                         <Badge variant="outline" className="text-[9px] border-white/20 uppercase">{score.phase || "STANDARD"}</Badge>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -927,6 +925,11 @@ export default function AdminPage() {
                       {score.comment && <p className="text-[10px] text-slate-400 italic mt-4 border-t border-white/5 pt-2">"{score.comment}"</p>}
                     </div>
                   ))}
+                  {entryScores.filter(score => score.isJudgeActive).length === 0 && (
+                    <div className="py-20 text-center uppercase text-muted-foreground text-[10px] tracking-widest">
+                      No active judge evaluations found for this project.
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             )}
@@ -936,4 +939,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
