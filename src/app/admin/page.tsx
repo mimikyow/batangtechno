@@ -197,6 +197,11 @@ export default function AdminPage() {
       
       const targetEntries = type === "TOP3" ? entries.filter(e => e.top10Published) : entries;
 
+      // Formula Definition: Determine which keys are part of the core average
+      const coreKeys = type === "TOP3" 
+        ? ["problemFit", "techExecution", "innovationImpact", "presentation"]
+        : ["mastery", "innovation", "impact", "compliance"];
+
       for (const entry of targetEntries) {
         const scoresRef = collection(db, "entries", entry.id, "scoreSubmissions");
         const snapshot = await getDocs(scoresRef);
@@ -210,14 +215,21 @@ export default function AdminPage() {
           const judgeId = data.judgeId || doc.id;
           const judge = (judges || []).find(j => j.id === judgeId);
 
-          // For Top 3, only consider FINALS phase scores from active judges
+          // Phase Validation: TOP3 only looks at FINALS phase scores
           const isPhaseValid = type === "TOP3" ? (data.scores && data.phase === "FINALS") : true;
 
+          // Judge Validation: Skip deactivated judges
           if (judge && judge.isActive !== false && isPhaseValid && data.scores) {
-            const sum = Object.values(data.scores).reduce((a: any, b: any) => a + b, 0) as number;
-            totalWeightedScore += sum;
+            // Apply Formula: Sum only the relevant core keys
+            let judgeSum = 0;
+            coreKeys.forEach(k => {
+              judgeSum += data.scores[k] || 0;
+            });
+
+            totalWeightedScore += judgeSum;
             submissionCount++;
 
+            // Track individual criteria for special awards (all metrics)
             Object.keys(data.scores).forEach(k => {
               criteriaSums[k] = (criteriaSums[k] || 0) + data.scores[k];
             });
@@ -234,6 +246,7 @@ export default function AdminPage() {
           isFinalist: !!entry.top10Published
         });
 
+        // Calculate Special Award Leaders among finalists
         if (entry.top10Published && submissionCount > 0) {
           Object.keys(awardsCalc).forEach(key => {
             if (key === 'projectManagement') return;
@@ -245,6 +258,7 @@ export default function AdminPage() {
         }
       }
 
+      // Partner Nomination Selection
       const specialJudge = judges?.find(j => j.email?.toLowerCase() === "fcveroya@asklexph.com");
       if (specialJudge && specialJudge.isActive !== false && specialJudge.projectManagementNomination) {
         const nominatedEntry = entries.find(e => e.id === specialJudge.projectManagementNomination);
@@ -293,6 +307,7 @@ export default function AdminPage() {
           });
         });
 
+        // Reset special awards first
         entries?.forEach(e => {
           const ref = doc(db, "entries", e.id);
           batch.update(ref, {
@@ -306,6 +321,7 @@ export default function AdminPage() {
           });
         });
 
+        // Apply calculated special awards
         Object.keys(specialAwards).forEach(key => {
           const winnerId = specialAwards[key].id;
           if (winnerId) {
@@ -326,6 +342,7 @@ export default function AdminPage() {
           }
         });
 
+        // Persist People's Choice status
         const peoplesChoiceWinner = entries?.find(e => e.isPeoplesChoice);
         if (peoplesChoiceWinner) {
           const ref = doc(db, "entries", peoplesChoiceWinner.id);
