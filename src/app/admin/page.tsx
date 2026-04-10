@@ -236,6 +236,8 @@ export default function AdminPage() {
           id: entry.id,
           teamName: entry.teamName,
           avgScore: avgScore.toFixed(2),
+          uiuxScore: submissionCount > 0 ? (criteriaSums['uiux'] / submissionCount).toFixed(2) : "0.00",
+          sustainabilityScore: submissionCount > 0 ? (criteriaSums['sustainability'] / submissionCount).toFixed(2) : "0.00",
           submissionCount,
           isFinalist: !!entry.top10Published
         });
@@ -349,17 +351,25 @@ export default function AdminPage() {
   };
 
   const handleSetPeoplesChoice = (entryId: string) => {
+    if (entryId === "NONE") {
+      entries?.forEach(e => {
+        if (e.isPeoplesChoice) {
+          updateDocumentNonBlocking(doc(db, "entries", e.id), { isPeoplesChoice: false });
+        }
+      });
+      toast({ title: "People's Choice Cleared" });
+      return;
+    }
+
     entries?.forEach(e => {
       if (e.isPeoplesChoice) {
         updateDocumentNonBlocking(doc(db, "entries", e.id), { isPeoplesChoice: false });
       }
     });
 
-    if (entryId && entryId !== "NONE") {
+    if (entryId) {
       updateDocumentNonBlocking(doc(db, "entries", entryId), { isPeoplesChoice: true });
       toast({ title: "People's Choice Updated" });
-    } else {
-      toast({ title: "People's Choice Cleared" });
     }
   };
 
@@ -684,13 +694,31 @@ export default function AdminPage() {
                       </div>
                       <ScrollArea className="h-72">
                         <Table>
-                          <TableHeader className="bg-white/5 sticky top-0"><TableRow><TableHead>Rank</TableHead><TableHead>Team</TableHead><TableHead className="text-right">Avg Score</TableHead></TableRow></TableHeader>
+                          <TableHeader className="bg-white/5 sticky top-0">
+                            <TableRow>
+                              <TableHead>Rank</TableHead>
+                              <TableHead>Team</TableHead>
+                              <TableHead className="text-right">Avg Core</TableHead>
+                              {publishingType === "TOP3" && (
+                                <>
+                                  <TableHead className="text-right">UI/UX Avg</TableHead>
+                                  <TableHead className="text-right">Sustain Avg</TableHead>
+                                </>
+                              )}
+                            </TableRow>
+                          </TableHeader>
                           <TableBody>
                             {rankedResults.map((res, i) => (
                               <TableRow key={res.id} className={cn(i < (publishingType === "TOP12" ? 12 : 3) && "bg-accent/5")}>
                                 <TableCell className="font-bold">#{i + 1}</TableCell>
                                 <TableCell className="font-medium text-xs">{res.teamName}</TableCell>
                                 <TableCell className="text-right font-mono text-xs">{res.avgScore}</TableCell>
+                                {publishingType === "TOP3" && (
+                                  <>
+                                    <TableCell className="text-right font-mono text-xs text-yellow-500">{res.uiuxScore}</TableCell>
+                                    <TableCell className="text-right font-mono text-xs text-green-500">{res.sustainabilityScore}</TableCell>
+                                  </>
+                                )}
                               </TableRow>
                             ))}
                           </TableBody>
@@ -921,21 +949,44 @@ export default function AdminPage() {
           <div className="py-6">
             {isLoadingScores ? <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 text-accent animate-spin" /></div> : (
               <ScrollArea className="h-[50vh]">
-                <div className="space-y-4 pr-4">
+                <div className="space-y-6 pr-4">
                   {entryScores.filter(score => score.isJudgeActive).map((score, idx) => (
                     <div key={idx} className="p-6 bg-white/5 rounded-xl border border-white/10">
                       <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
                         <div className="font-bold text-accent uppercase tracking-widest text-xs">{score.judgeName}</div>
                         <Badge variant="outline" className="text-[9px] border-white/20 uppercase">{score.phase || "STANDARD"}</Badge>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {activeCriteria.map(crit => (
-                          <div key={crit.key} className="p-3 bg-black/20 rounded-lg text-center">
-                            <div className="text-[8px] uppercase text-muted-foreground mb-1">{crit.label}</div>
-                            <div className="text-lg font-bold text-white">{score.scores?.[crit.key] ?? 0}</div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[9px] font-black uppercase text-muted-foreground mb-3 tracking-widest">Core Mission Criteria</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {activeCriteria.filter(c => !['uiux', 'sustainability'].includes(c.key)).map(crit => (
+                              <div key={crit.key} className="p-3 bg-black/20 rounded-lg text-center">
+                                <div className="text-[8px] uppercase text-muted-foreground mb-1">{crit.label}</div>
+                                <div className="text-lg font-bold text-white">{score.scores?.[crit.key] ?? 0}</div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+
+                        {appConfig?.phase === 'FINALS' && (
+                          <div className="pt-4 border-t border-white/5">
+                            <p className="text-[9px] font-black uppercase text-yellow-500 mb-3 tracking-widest flex items-center gap-2"><Sparkles className="w-3 h-3" /> Special Award Recon</p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-lg text-center">
+                                <div className="text-[8px] uppercase text-yellow-500/70 mb-1">UI/UX Design</div>
+                                <div className="text-lg font-bold text-white">{score.scores?.uiux ?? 0}</div>
+                              </div>
+                              <div className="p-3 bg-green-500/5 border border-green-500/10 rounded-lg text-center">
+                                <div className="text-[8px] uppercase text-green-500/70 mb-1">Sustainability</div>
+                                <div className="text-lg font-bold text-white">{score.scores?.sustainability ?? 0}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+                      
                       {score.comment && <p className="text-[10px] text-slate-400 italic mt-4 border-t border-white/5 pt-2">"{score.comment}"</p>}
                     </div>
                   ))}
