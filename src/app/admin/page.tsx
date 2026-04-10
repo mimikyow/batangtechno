@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, BarChart3, Presentation, Save, Edit2, Users, Star, RefreshCw, Power, Settings2, ChevronUp, ChevronDown, Heart, Code, Rocket } from "lucide-react";
+import { Plus, Trash2, Zap, ShieldAlert, Loader2, Trophy, UserPlus, KeyRound, BarChart3, Presentation, Save, Edit2, Users, Star, RefreshCw, Power, Settings2, ChevronUp, ChevronDown, Heart, Code, Rocket, Sparkles, Award } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -196,8 +196,6 @@ export default function AdminPage() {
       };
       
       const targetEntries = type === "TOP3" ? entries.filter(e => e.top10Published) : entries;
-
-      // Formula Definition: Determine which keys are part of the core average
       const coreKeys = type === "TOP3" 
         ? ["problemFit", "techExecution", "innovationImpact", "presentation"]
         : ["mastery", "innovation", "impact", "compliance"];
@@ -215,12 +213,9 @@ export default function AdminPage() {
           const judgeId = data.judgeId || doc.id;
           const judge = (judges || []).find(j => j.id === judgeId);
 
-          // Phase Validation: TOP3 only looks at FINALS phase scores
           const isPhaseValid = type === "TOP3" ? (data.scores && data.phase === "FINALS") : true;
 
-          // Judge Validation: Skip deactivated judges
           if (judge && judge.isActive !== false && isPhaseValid && data.scores) {
-            // Apply Formula: Sum only the relevant core keys
             let judgeSum = 0;
             coreKeys.forEach(k => {
               judgeSum += data.scores[k] || 0;
@@ -229,7 +224,6 @@ export default function AdminPage() {
             totalWeightedScore += judgeSum;
             submissionCount++;
 
-            // Track individual criteria for special awards (all metrics)
             Object.keys(data.scores).forEach(k => {
               criteriaSums[k] = (criteriaSums[k] || 0) + data.scores[k];
             });
@@ -246,8 +240,7 @@ export default function AdminPage() {
           isFinalist: !!entry.top10Published
         });
 
-        // Calculate Special Award Leaders among finalists
-        if (entry.top10Published && submissionCount > 0) {
+        if (submissionCount > 0) {
           Object.keys(awardsCalc).forEach(key => {
             if (key === 'projectManagement') return;
             const avgCrit = criteriaSums[key] / submissionCount;
@@ -258,7 +251,6 @@ export default function AdminPage() {
         }
       }
 
-      // Partner Nomination Selection
       const specialJudge = judges?.find(j => j.email?.toLowerCase() === "fcveroya@asklexph.com");
       if (specialJudge && specialJudge.isActive !== false && specialJudge.projectManagementNomination) {
         const nominatedEntry = entries.find(e => e.id === specialJudge.projectManagementNomination);
@@ -307,7 +299,6 @@ export default function AdminPage() {
           });
         });
 
-        // Reset special awards first
         entries?.forEach(e => {
           const ref = doc(db, "entries", e.id);
           batch.update(ref, {
@@ -321,7 +312,6 @@ export default function AdminPage() {
           });
         });
 
-        // Apply calculated special awards
         Object.keys(specialAwards).forEach(key => {
           const winnerId = specialAwards[key].id;
           if (winnerId) {
@@ -342,7 +332,6 @@ export default function AdminPage() {
           }
         });
 
-        // Persist People's Choice status
         const peoplesChoiceWinner = entries?.find(e => e.isPeoplesChoice);
         if (peoplesChoiceWinner) {
           const ref = doc(db, "entries", peoplesChoiceWinner.id);
@@ -659,6 +648,10 @@ export default function AdminPage() {
                   {processingStatus === "CALCULATING" && <div className="text-center py-12"><Loader2 className="w-12 h-12 text-accent animate-spin mx-auto" /></div>}
                   {processingStatus === "READY" && (
                     <div className="space-y-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-accent" />
+                        <h4 className="text-[11px] font-black uppercase text-accent tracking-[0.2em] italic">Special Award Recon</h4>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                          <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg text-center">
                             <p className="text-[9px] uppercase text-accent font-bold mb-1">Problem Solver</p>
@@ -683,6 +676,10 @@ export default function AdminPage() {
                          <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg text-center">
                             <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1">Sustainability</p>
                             <p className="text-[10px] text-white font-black truncate">{specialAwards.sustainability?.team}</p>
+                         </div>
+                         <div className="p-4 bg-yellow-500/10 border border-yellow-500/40 rounded-lg text-center col-span-2">
+                            <p className="text-[9px] uppercase text-yellow-500 font-bold mb-1 flex items-center justify-center gap-2"><Award className="w-3 h-3" /> Ask Lex PH Academy Award</p>
+                            <p className="text-[11px] text-white font-black truncate">{specialAwards.projectManagement?.team}</p>
                          </div>
                       </div>
                       <ScrollArea className="h-72">
