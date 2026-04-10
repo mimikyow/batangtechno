@@ -520,26 +520,18 @@ export default function AdminPage() {
   const handleMoveRank = (entryId: string, direction: 'UP' | 'DOWN') => {
     if (!filteredEntries) return;
     const currentIndex = filteredEntries.findIndex(e => e.id === entryId);
+    const targetIndex = direction === 'UP' ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= filteredEntries.length) return;
+
+    const entryA = filteredEntries[currentIndex];
+    const entryB = filteredEntries[targetIndex];
+
+    // Swapping ranks based on 1-based indexing of their new filtered list position
+    updateDocumentNonBlocking(doc(db, "entries", entryA.id), { finalRank: targetIndex + 1 });
+    updateDocumentNonBlocking(doc(db, "entries", entryB.id), { finalRank: currentIndex + 1 });
     
-    if (direction === 'UP' && currentIndex > 0) {
-      const entryA = filteredEntries[currentIndex];
-      const entryB = filteredEntries[currentIndex - 1];
-      const rankA = entryA.finalRank || (currentIndex + 1);
-      const rankB = entryB.finalRank || currentIndex;
-      
-      updateDocumentNonBlocking(doc(db, "entries", entryA.id), { finalRank: rankB });
-      updateDocumentNonBlocking(doc(db, "entries", entryB.id), { finalRank: rankA });
-      toast({ title: "Sequence Updated" });
-    } else if (direction === 'DOWN' && currentIndex < filteredEntries.length - 1) {
-      const entryA = filteredEntries[currentIndex];
-      const entryB = filteredEntries[currentIndex + 1];
-      const rankA = entryA.finalRank || (currentIndex + 1);
-      const rankB = entryB.finalRank || (currentIndex + 2);
-      
-      updateDocumentNonBlocking(doc(db, "entries", entryA.id), { finalRank: rankB });
-      updateDocumentNonBlocking(doc(db, "entries", entryB.id), { finalRank: rankA });
-      toast({ title: "Sequence Updated" });
-    }
+    toast({ title: "Sequence Updated" });
   };
 
   if (isUserLoading) {
@@ -776,7 +768,7 @@ export default function AdminPage() {
                         <TableCell>
                           <div className="flex flex-col items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-accent/50 disabled:opacity-20" disabled={idx === 0} onClick={() => handleMoveRank(entry.id, 'UP')}><ChevronUp className="w-4 h-4" /></Button>
-                            <span className="text-[10px] font-bold text-white">{entry.finalRank || idx + 1}</span>
+                            <span className="text-[10px] font-bold text-white">{idx + 1}</span>
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-accent/50 disabled:opacity-20" disabled={idx === filteredEntries.length - 1} onClick={() => handleMoveRank(entry.id, 'DOWN')}><ChevronDown className="w-4 h-4" /></Button>
                           </div>
                         </TableCell>
