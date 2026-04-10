@@ -8,12 +8,11 @@ import { CHALLENGES } from "@/lib/constants";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter, Loader2, Trophy, Rocket, Star, Code, Sparkles, Heart, Award } from "lucide-react";
+import { Search, Filter, Loader2, Trophy, Rocket, Star, Code, Sparkles, Heart } from "lucide-react";
 import Image from "next/image";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
-import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -191,24 +190,9 @@ export default function Home() {
                       <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">stellar performances identified by the council</p>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
                       {specialAwardWinners.map(entry => (
-                        <div key={entry.id} className="glass-card p-6 rounded-xl border-accent/20 flex flex-col gap-4">
-                          <div className="flex flex-wrap gap-2">
-                            {entry.isPeoplesChoice && <Badge className="bg-red-500/20 text-red-500 border-red-500/30 text-[8px] uppercase font-black"><Heart className="w-2.5 h-2.5 mr-1 fill-red-500" /> People's Choice</Badge>}
-                            {entry.awardProjectManagement && <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Excellence in Project Management</Badge>}
-                            {entry.awardProblemFit && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Best Problem Solver</Badge>}
-                            {entry.awardTechExecution && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Tech Execution</Badge>}
-                            {entry.awardInnovationImpact && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Innovation Impact</Badge>}
-                            {entry.awardPresentation && <Badge className="bg-accent/20 text-accent border-accent/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Best Pitch</Badge>}
-                            {entry.awardUiux && <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[8px] uppercase font-black"><Sparkles className="w-2.5 h-2.5 mr-1" /> Best UI/UX</Badge>}
-                            {entry.awardSustainability && <Badge className="bg-green-500/20 text-green-500 border-green-500/30 text-[8px] uppercase font-black"><Award className="w-2.5 h-2.5 mr-1" /> Sustainability</Badge>}
-                          </div>
-                          <div>
-                            <p className="text-white font-black text-lg uppercase tracking-tight">{entry.teamName}</p>
-                            <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{entry.projectName}</p>
-                          </div>
-                        </div>
+                        <EntryCard key={entry.id} entry={entry as any} />
                       ))}
                     </div>
                   </div>
