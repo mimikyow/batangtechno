@@ -699,7 +699,7 @@ export default function AdminPage() {
                               <TableHead>Rank</TableHead>
                               <TableHead>Team</TableHead>
                               <TableHead className="text-right">Avg Core</TableHead>
-                              {publishingType === "TOP3" && (
+                              {appConfig?.phase === "FINALS" && (
                                 <>
                                   <TableHead className="text-right">UI/UX Avg</TableHead>
                                   <TableHead className="text-right">Sustain Avg</TableHead>
@@ -713,7 +713,7 @@ export default function AdminPage() {
                                 <TableCell className="font-bold">#{i + 1}</TableCell>
                                 <TableCell className="font-medium text-xs">{res.teamName}</TableCell>
                                 <TableCell className="text-right font-mono text-xs">{res.avgScore}</TableCell>
-                                {publishingType === "TOP3" && (
+                                {appConfig?.phase === "FINALS" && (
                                   <>
                                     <TableCell className="text-right font-mono text-xs text-yellow-500">{res.uiuxScore}</TableCell>
                                     <TableCell className="text-right font-mono text-xs text-green-500">{res.sustainabilityScore}</TableCell>
@@ -970,7 +970,7 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {appConfig?.phase === 'FINALS' && (
+                        {(score.phase === 'FINALS' || appConfig?.phase === 'FINALS') && (
                           <div className="pt-4 border-t border-white/5">
                             <p className="text-[9px] font-black uppercase text-yellow-500 mb-3 tracking-widest flex items-center gap-2"><Sparkles className="w-3 h-3" /> Special Award Recon</p>
                             <div className="grid grid-cols-2 gap-4">
