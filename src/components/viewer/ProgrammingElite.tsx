@@ -61,10 +61,10 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
                   <div className="aspect-square relative overflow-hidden rounded-full mb-6 mx-auto w-24 h-24 sm:w-32 sm:h-32 border-4 border-white/5 bg-black/20">
                     <Image 
                       fill 
-                      src={getGoogleDriveImageUrl(winner.pictureUrl) || "https://picsum.photos/seed/winner/200/200"} 
-                      alt={winner.name} 
-                      className="object-cover"
-                      data-ai-hint="winner portrait"
+                      src={getGoogleDriveImageUrl(winner.schoolLogoUrl) || "https://picsum.photos/seed/school/200/200"} 
+                      alt={winner.school} 
+                      className="object-contain p-4"
+                      data-ai-hint="school logo"
                     />
                   </div>
 
@@ -74,10 +74,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
                     </h4>
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex items-center gap-2 max-w-full">
-                        <div className="relative w-4 h-4 flex-shrink-0">
-                          <Image src={getGoogleDriveImageUrl(winner.schoolLogoUrl)} alt="School" fill className="object-contain" />
-                        </div>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold truncate max-w-[150px]">{winner.school}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold truncate max-w-[200px]">{winner.school}</span>
                       </div>
                       <Badge variant="outline" className={`text-[8px] font-black uppercase border-white/10 ${
                         isFirst ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' : 
