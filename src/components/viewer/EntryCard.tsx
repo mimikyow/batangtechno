@@ -157,7 +157,7 @@ export function EntryCard({ entry }: EntryCardProps) {
           <div className="flex items-center -space-x-2">
             {uniqueSchoolLogos.length > 0 ? (
               uniqueSchoolLogos.map((logoUrl, idx) => (
-                <div key={idx} className="relative w-7 h-7 rounded-full bg-black border border-white/10 overflow-hidden">
+                <div key={idx} className="relative w-7 h-7 rounded-full bg-white border border-white/10 overflow-hidden">
                   <Image src={logoUrl} alt="School Logo" fill className="object-contain p-1" />
                 </div>
               ))
@@ -201,7 +201,7 @@ export function EntryCard({ entry }: EntryCardProps) {
                         {entry.projectMembers?.map((m, i) => (
                           <div key={i} className="flex items-center gap-3 p-2 bg-white/5 rounded border border-white/10">
                             {m.schoolLogoUrl && (
-                              <div className="relative w-8 h-8 flex-shrink-0 bg-black rounded-full border border-white/10 overflow-hidden">
+                              <div className="relative w-8 h-8 flex-shrink-0 bg-white rounded-full border border-white/10 overflow-hidden">
                                 <Image 
                                   src={getGoogleDriveImageUrl(m.schoolLogoUrl)} 
                                   alt={m.school} 

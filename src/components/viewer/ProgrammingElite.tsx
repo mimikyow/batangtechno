@@ -33,7 +33,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
     return (
       <div className="space-y-12">
         <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-widest text-center border-b border-white/10 pb-4">
-          {title}
+          {title} Division
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end max-w-5xl mx-auto px-4">
           {podiumOrder.map((winner) => {
@@ -58,7 +58,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
                     {isFirst ? <Trophy className="w-5 h-5 text-white" /> : isSecond ? <Medal className="w-5 h-5 text-white" /> : <Star className="w-5 h-5 text-white" />}
                   </div>
                   
-                  <div className="aspect-square relative overflow-hidden rounded-full mb-6 mx-auto w-24 h-24 sm:w-32 sm:h-32 border-4 border-white/5 bg-black/20">
+                  <div className="aspect-square relative overflow-hidden rounded-full mb-6 mx-auto w-24 h-24 sm:w-32 sm:h-32 border-4 border-white/5 bg-white">
                     <Image 
                       fill 
                       src={getGoogleDriveImageUrl(winner.schoolLogoUrl) || "https://picsum.photos/seed/school/200/200"} 
@@ -69,7 +69,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
                   </div>
 
                   <div className="text-center space-y-2">
-                    <h4 className={`font-black text-white uppercase tracking-tight truncate w-full ${isFirst ? 'text-lg' : 'text-base'}`}>
+                    <h4 className={`font-black text-white uppercase tracking-tight w-full ${isFirst ? 'text-lg' : 'text-base'}`}>
                       {winner.name}
                     </h4>
                     <div className="flex flex-col items-center gap-1">
@@ -103,8 +103,8 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
   return (
     <div className="py-8 sm:py-12 space-y-16 sm:space-y-24">
       <div className="space-y-24 sm:space-y-32">
-        {renderPodium(collegeWinners, "College Division")}
-        {renderPodium(hsWinners, "High School Division")}
+        {renderPodium(collegeWinners, "College")}
+        {renderPodium(hsWinners, "High School")}
       </div>
     </div>
   );
