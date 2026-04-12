@@ -105,7 +105,7 @@ export function ProgrammingElite({ winners }: ProgrammingEliteProps) {
     <div className="py-8 sm:py-12 space-y-16 sm:space-y-24">
       <div className="space-y-24 sm:space-y-32">
         {renderPodium(collegeWinners, "College Division")}
-        {renderPodium(hsWinners, "Senior High School Division")}
+        {renderPodium(hsWinners, "High School Division")}
       </div>
     </div>
   );
